@@ -47,6 +47,10 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 .pill{display:inline-block;background:var(--gold);color:#0a3d62;font-weight:700;font-size:12px;border-radius:999px;padding:3px 9px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
+nav a{position:relative}
+.bdg{position:absolute;top:3px;left:calc(50% + 7px);background:#e53935;color:#fff;border-radius:999px;min-width:18px;height:18px;padding:0 5px;font:700 11px/18px system-ui,sans-serif;font-style:normal;text-align:center;border:2px solid var(--card);box-sizing:content-box}
+.card.msg{border-left:4px solid var(--pr)}.card.msg.new{border-left-color:#e53935}
+.mh{display:flex;justify-content:space-between;align-items:center;gap:8px}.newp{background:#e53935;color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
 #lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:12px}#lb img{max-width:100%;max-height:100%;border-radius:8px}
 @media(min-width:768px){main{padding:24px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.brand h1{font-size:34px}.grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}.grid img{height:190px}nav{justify-content:center}nav a{max-width:130px}.svcs{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}.svcs .card{margin:0}}
 </style>
@@ -77,6 +81,7 @@ const F = {
   book_title:["Booking page title","Book Launch Service"],
   book_note:["Booking page note","Fill in the details to book your seats."],
   gallery_title:["Gallery page title","Gallery"],
+  msg_title:["Messages page title","Messages"],
   loc_title:["Location page title","Live Launch Location"]
 };
 // Sample timings - the owner edits them in Admin > Services
@@ -89,6 +94,7 @@ const DEFAULT_SERVICES = [
     {label:"From Khanderi", times:["09:00 AM","11:00 AM","01:00 PM","03:00 PM","05:00 PM"]}]}
 ];
 let C = {}, S = DEFAULT_SERVICES, L = {}, pics = [], bookings = [], enquiries = [], user = null;
+let msgs = [], editingMsg = null;
 let adminTab = "set", svcDraft = null, unsubs = [], shownLoc = "", watch = null, lastSend = 0;
 
 const $ = id => document.getElementById(id);
@@ -100,10 +106,18 @@ const wa = t => window.open("https://wa.me/" + g("whatsapp") + "?text=" + encode
 const locKey = () => [L.enabled, L.lat, L.lng].join();
 const ago = ts => { if (!ts) return "unknown"; const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : new Date(ts).toLocaleString(); };
 
-const TABS = [["home","🏠","Home"],["enquiry","✉️","Enquiry"],["book","📅","Book"],["gallery","🖼️","Gallery"],["location","📍","Location"],["admin","🔒","Admin"]];
+// ---------- unread tracking (kept on each client's own device) ----------
+const RK = "shreeram_read_v1";
+const getRead = () => { try { return JSON.parse(localStorage.getItem(RK) || "{}"); } catch (e) { return {}; } };
+const isNew = (m, r) => !r[m.id] || r[m.id] < (m.updatedAt || m.createdAt);
+const unreadCount = () => { const r = getRead(); return msgs.filter(m => isNew(m, r)).length; };
+const markRead = () => { try { const r = {}; msgs.forEach(m => r[m.id] = m.updatedAt || m.createdAt); localStorage.setItem(RK, JSON.stringify(r)); } catch (e) {} };
+const fmt = ts => new Date(ts).toLocaleString([], {day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit"});
+
+const TABS = [["home","🏠","Home"],["enquiry","✉️","Enquiry"],["book","📅","Book"],["gallery","🖼️","Gallery"],["messages","💬","Messages"],["location","📍","Location"],["admin","🔒","Admin"]];
 function chrome(){
   $("hdr").innerHTML = `<span class="logo">⚓</span><span>${esc(g("app_name"))}</span>`; document.title = g("app_name");
-  $("nav").innerHTML = TABS.map(t => `<a href="#${t[0]}" class="${page()===t[0]?'on':''}"><span>${t[1]}</span>${t[2]}</a>`).join("");
+  $("nav").innerHTML = TABS.map(t => `<a href="#${t[0]}" class="${page()===t[0]?'on':''}"><span>${t[1]}</span>${t[2]}${t[0]==="messages"&&unreadCount()?`<i class="bdg">${unreadCount()>99?"99+":unreadCount()}</i>`:""}</a>`).join("");
 }
 
 // ---------- live data (same Firebase database as before) ----------
@@ -111,6 +125,7 @@ cfg.doc("content").onSnapshot(d => { C = d.exists ? d.data() : {}; dataChanged()
 cfg.doc("services").onSnapshot(d => { S = (d.exists && Array.isArray(d.data().items)) ? d.data().items : DEFAULT_SERVICES; dataChanged(); }, () => {});
 cfg.doc("location").onSnapshot(d => { L = d.exists ? d.data() : {}; dataChanged(); }, () => {});
 db.collection("gallery").orderBy("createdAt").onSnapshot(q => { pics = q.docs.map(d => ({id:d.id, ...d.data()})); dataChanged(); }, () => {});
+db.collection("messages").orderBy("createdAt","desc").onSnapshot(q => { msgs = q.docs.map(d => ({id:d.id, ...d.data()})); dataChanged(); }, () => {});
 auth.onAuthStateChanged(u => {
   user = u; unsubs.forEach(f => f()); unsubs = []; bookings = []; enquiries = [];
   if (!u) stopTrack();
@@ -121,17 +136,19 @@ auth.onAuthStateChanged(u => {
 // Re-draw only pages without typing areas, so forms are never wiped
 function dataChanged(){
   chrome(); const p = page();
-  if (p === "home" || p === "gallery") render();
+  if (p === "home" || p === "gallery" || p === "messages") render();
   else if (p === "location" && locKey() !== shownLoc) render();
   else if (p === "admin" && user && ["gal","book","enq"].includes(adminTab)) render();
   else if (p === "admin" && user && adminTab === "loc") locStatus();
+  else if (p === "admin" && user && adminTab === "msg") refreshMsgList();
 }
 window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
 
 function render(){
-  chrome(); const p = page();
-  $("app").innerHTML = ({home, enquiry, book, gallery, location:locate, admin}[p] || home)();
+  const p = page();
+  $("app").innerHTML = ({home, enquiry, book, gallery, messages, location:locate, admin}[p] || home)();
   const init = {enquiry:initEnquiry, book:initBook, admin:initAdmin}[p]; if (init) init();
+  chrome();
 }
 
 // ---------- HOME ----------
@@ -194,6 +211,14 @@ function initBook(){
 function gallery(){ return `<h2>${esc(g("gallery_title"))}</h2>` + (pics.length
   ? `<div class="grid">${pics.map(p => `<img data-lb loading="lazy" alt="" src="${src(p)}">`).join("")}</div>` : "<p>No photos yet.</p>"); }
 
+// ---------- MESSAGES (read-only for clients) ----------
+function messages(){
+  const r = getRead(), items = msgs.map(m => ({m, n:isNew(m, r)}));
+  markRead();
+  return `<h2>${esc(g("msg_title"))}</h2>` + (items.length ? items.map(({m, n}) => `<div class="card msg${n ? " new" : ""}"><div class="mh"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small>${n ? '<span class="newp">NEW</span>' : ""}</div><p>${esc(m.text)}</p></div>`).join("")
+    : `<div class="card"><p>No messages yet.</p></div>`);
+}
+
 // ---------- LIVE LOCATION ----------
 function locate(){
   shownLoc = locKey(); const h = `<h2>${esc(g("loc_title"))}</h2>`;
@@ -207,7 +232,7 @@ function locate(){
 function admin(){
   if (!user) return `<h2>Admin Login</h2><div class="card"><label>Admin email</label><input id="ae" type="email" autocomplete="username"><label>Password</label><input id="ap" type="password" autocomplete="current-password">
    <div id="msg"></div><button class="full" id="go">Login</button></div>`;
-  const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["loc","Location"],["book","Bookings"],["enq","Enquiries"],["acc","Account"]];
+  const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["msg","Messages"],["loc","Location"],["book","Bookings"],["enq","Enquiries"],["acc","Account"]];
   let body = "";
   if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p>` + Object.keys(F).map(k =>
       `<label>${esc(F[k][0])}</label><textarea data-k="${k}" rows="${["about","tagline"].includes(k) ? 3 : 1}">${esc(g(k))}</textarea>`).join("")
@@ -218,6 +243,7 @@ function admin(){
       <small>The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.</small></div>
       <div class="grid">${pics.map(p => `<div class="card" style="padding:8px;margin:0"><img alt="" src="${src(p)}">${p.id === hid ? '<span class="pill" style="margin-top:8px">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
         <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
+  else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
   else if (adminTab === "loc") body = `<div class="card"><label class="chk"><input type="checkbox" id="locEn" ${L.enabled ? "checked" : ""}> Show launch location to clients (Location tab)</label>
       <label class="chk"><input type="checkbox" id="locAuto" ${watch ? "checked" : ""}> Update location automatically from THIS phone</label>
       <small>Use this on the phone kept on the launch. Keep the app open and the screen on, and allow location access.</small>
@@ -228,6 +254,13 @@ function admin(){
   else body = `<div class="card"><p>Logged in as ${esc(user.email)}</p><small>To change the password: Firebase Console → Authentication → Users.</small><br><br><button id="out">Logout</button></div>`;
   return `<div class="tabs">${tabs.map(t => `<button data-t="${t[0]}" class="${adminTab===t[0]?'on':''}">${t[1]}</button>`).join("")}</div>` + body;
 }
+function msgListAdmin(){
+  return `<p><b>${msgs.length} posted (newest first)</b></p>` + msgs.map(m => editingMsg === m.id
+    ? `<div class="card"><textarea id="medit" rows="4">${esc(m.text)}</textarea><button class="sm" data-act="saveMsg" data-id="${m.id}">Save</button><button class="sm gold" data-act="cancelMsg">Cancel</button></div>`
+    : `<div class="card"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small><p>${esc(m.text)}</p><button class="sm" data-act="editMsg" data-id="${m.id}">Edit</button><button class="sm del" data-act="delMsg" data-id="${m.id}">Delete</button></div>`).join("");
+}
+function refreshMsgList(){ const el = $("msglist"); if (el && editingMsg === null) el.innerHTML = msgListAdmin(); }
+
 function svcEditor(){
   return `<p><b>Edit services and timings, then tap Save services.</b></p>` + svcDraft.map((s,i) => `<div class="card"><label>Service name</label><input data-f="name" data-i="${i}" value="${esc(s.name)}">
     <label>Fare per person ₹ (0 = hide fare)</label><input data-f="fare" data-i="${i}" type="number" inputmode="numeric" value="${esc(s.fare)}">
@@ -245,12 +278,16 @@ $("app").addEventListener("input", e => {
 });
 $("app").addEventListener("click", e => {
   const lb = e.target.closest("[data-lb]"); if (lb) { $("lb").querySelector("img").src = lb.src; $("lb").style.display = "flex"; return; }
-  const tb = e.target.closest("[data-t]"); if (tb) { adminTab = tb.dataset.t; if (adminTab !== "svc") svcDraft = null; render(); return; }
+  const tb = e.target.closest("[data-t]"); if (tb) { adminTab = tb.dataset.t; editingMsg = null; if (adminTab !== "svc") svcDraft = null; render(); return; }
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j, k = +b.dataset.k, id = b.dataset.id;
   if (a === "setHome") { cfg.doc("content").set({home_img_id:id}, {merge:true}); return; }
   if (a === "delPic") { if (confirm("Delete this photo?")) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
   if (a === "delRec") { if (confirm("Delete this record?")) db.collection(b.dataset.col).doc(id).delete(); return; }
+  if (a === "editMsg") { editingMsg = id; $("msglist").innerHTML = msgListAdmin(); return; }
+  if (a === "cancelMsg") { editingMsg = null; refreshMsgList(); return; }
+  if (a === "saveMsg") { const t = $("medit").value.trim(); if (!t) return; db.collection("messages").doc(id).update({text:t, updatedAt:Date.now()}); editingMsg = null; refreshMsgList(); return; }
+  if (a === "delMsg") { if (confirm("Delete this message for all clients?")) db.collection("messages").doc(id).delete(); return; }
   if (!svcDraft) return;
   if (a === "addSvc") svcDraft.push({name:"New service", fare:"0", groups:[{label:"From Mora", times:[""]}]});
   else if (a === "delSvc") { if (!confirm("Delete this service?")) return; svcDraft.splice(i, 1); }
@@ -268,6 +305,10 @@ function initAdmin(){
   on("go", () => { $("go").disabled = true; auth.signInWithEmailAndPassword($("ae").value.trim(), $("ap").value)
     .catch(() => { $("go").disabled = false; $("msg").innerHTML = '<span class="err">Login failed. Check email, password and internet.</span>'; }); });
   on("out", () => auth.signOut());
+  on("mpost", () => { const t = $("mtext").value.trim(); if (!t) { $("msg").innerHTML = '<span class="err">Type a message first.</span>'; return; }
+    const n = Date.now(); db.collection("messages").add({text:t, createdAt:n, updatedAt:n})
+      .then(() => { $("mtext").value = ""; $("msg").innerHTML = '<span class="ok">✔ Posted. Clients can see it now.</span>'; })
+      .catch(() => $("msg").innerHTML = '<span class="err">Could not post. Check you are logged in and the database rules are updated.</span>'); });
   on("save", () => { const o = {}; document.querySelectorAll("[data-k]").forEach(t => o[t.dataset.k] = t.value.trim());
     cfg.doc("content").set(o, {merge:true}).then(() => $("msg").innerHTML = '<span class="ok">✔ Saved. Clients now see the changes.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
   on("svsave", () => { const items = svcDraft.map(s => ({name:s.name.trim() || "Service", fare:String(s.fare || "0"),
