@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a3d62">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shree Ram Launch">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Shree Ram Launch Service</title>
+<style>
+:root{--bg:#f2f6f9;--card:#fff;--tx:#12222d;--mut:#5b7080;--pr:#0a5c8f;--navy:#0a3d62;--gold:#f2a900;--ln:#dbe5ec;--ok:#2e7d32;--sh:0 2px 10px rgba(10,61,98,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1820;--card:#15252f;--tx:#e8f1f6;--mut:#9ab0bf;--pr:#43aee0;--ln:#27404d;--sh:none}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);line-height:1.45;
+ padding:0 env(safe-area-inset-right) calc(74px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+header{background:linear-gradient(135deg,#0a3d62,#0a5c8f);color:#fff;padding:calc(13px + env(safe-area-inset-top)) 16px 13px;font-weight:700;font-size:19px;
+ position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.logo{background:var(--gold);color:#0a3d62;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;font-size:17px;flex:none}
+main{max-width:960px;margin:0 auto;padding:14px}
+h2{margin:6px 0 10px;font-size:21px;color:var(--navy)}@media(prefers-color-scheme:dark){h2{color:#cfe9f7}}
+.sec{display:flex;align-items:center;gap:10px}.sec:after{content:"";flex:1;height:2px;background:var(--ln)}
+.brand{text-align:center;padding:6px 4px 12px}.brand h1{margin:0;font-size:26px;color:var(--navy)}.brand p{margin:4px 0 0;color:var(--mut)}
+@media(prefers-color-scheme:dark){.brand h1{color:#fff}}
+.banner{width:100%;aspect-ratio:16/9;max-height:380px;border-radius:16px;overflow:hidden;margin-bottom:14px;box-shadow:var(--sh);background:#cfe3ef}
+.banner img{width:100%;height:100%;object-fit:cover;display:block}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:15px;margin-bottom:12px;box-shadow:var(--sh)}
+.card h3{margin:0 0 6px;font-size:17px}p{white-space:pre-line;margin:4px 0}
+.svc-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}.svc-h h3{margin:0}
+.num{display:inline-grid;place-items:center;background:var(--navy);color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;margin-right:8px}
+.fare{background:var(--gold);color:#0a3d62;font-weight:700;border-radius:999px;padding:3px 11px;white-space:nowrap;font-size:14px}
+.grp{border-top:1px dashed var(--ln);padding-top:9px;margin-top:9px}.grp>b{font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}.chip{background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:5px 10px;font-size:14px;font-weight:600}
+label{display:block;font-size:13px;color:var(--mut);margin:11px 0 4px}label.chk{display:flex;gap:10px;align-items:center;color:var(--tx);font-size:15px}label.chk input{width:22px;height:22px}
+input,textarea,select{width:100%;padding:11px;border:1px solid var(--ln);border-radius:9px;background:var(--bg);color:var(--tx);font:inherit;font-size:16px}
+button,.btn{display:inline-block;background:var(--pr);color:#fff;border:0;border-radius:10px;padding:12px 16px;min-height:44px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;text-align:center}
+button.full,.btn.full{display:block;width:100%;margin-top:12px}.btn.alt{background:transparent;color:var(--pr);border:1.5px solid var(--pr)}
+button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}button.del{background:#c62828}button.gold{background:var(--gold);color:#0a3d62}button:disabled{opacity:.5}
+.ok{color:var(--ok);font-weight:600}.err{color:#c62828}small{color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.grid img{width:100%;height:150px;object-fit:cover;border-radius:12px;display:block;cursor:zoom-in}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}.tabs button{background:var(--card);color:var(--tx);border:1px solid var(--ln);white-space:nowrap;box-shadow:none}.tabs button.on{background:var(--pr);color:#fff}
+.trow{display:flex;flex-wrap:wrap;gap:6px}.tin{display:flex;gap:2px}.tin input{width:112px;padding:8px}.tin button{background:#c62828;padding:0 9px;min-height:38px}
+.map{padding:0;overflow:hidden}.map iframe{width:100%;height:58vh;min-height:320px;border:0;display:block}
+.pill{display:inline-block;background:var(--gold);color:#0a3d62;font-weight:700;font-size:12px;border-radius:999px;padding:3px 9px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:20;padding:12px}#lb img{max-width:100%;max-height:100%;border-radius:8px}
+@media(min-width:768px){main{padding:24px}.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.brand h1{font-size:34px}.grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}.grid img{height:190px}nav{justify-content:center}nav a{max-width:130px}.svcs{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}.svcs .card{margin:0}}
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<main id="app"></main>
+<nav id="nav"></nav>
+<div id="lb"><img alt=""></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+firebase.initializeApp(window.FIREBASE_CONFIG);
+const auth = firebase.auth(), db = firebase.firestore(), cfg = db.collection("config");
+
+const F = {
+  app_name:["App heading / name","Shree Ram Launch Service"],
+  tagline:["Home tagline","Safe & comfortable passenger launch service from Uran (Mora)"],
+  about:["About text","Shree Ram Launch Service runs passenger launches from Mora Jetty, Uran to Mumbai (Colaba) and Khanderi (Kanhoji Angre Island), with life jackets and experienced crew."],
+  services_title:["Services heading","Services"],
+  phone:["Phone number","+910000000000"],
+  whatsapp:["WhatsApp number (country code, no +)","910000000000"],
+  enq_title:["Enquiry page title","Enquiry"],
+  enq_note:["Enquiry page note","Ask us about group trips, rates, or timings."],
+  book_title:["Booking page title","Book Launch Service"],
+  book_note:["Booking page note","Fill in the details to book your seats."],
+  gallery_title:["Gallery page title","Gallery"],
+  loc_title:["Location page title","Live Launch Location"]
+};
+// Sample timings - the owner edits them in Admin > Services
+const DEFAULT_SERVICES = [
+  {name:"Uran (Mora) To Mumbai (Colaba)", fare:"0", groups:[
+    {label:"From Mora", times:["07:00 AM","10:00 AM","01:00 PM","04:00 PM"]},
+    {label:"From Colaba", times:["08:30 AM","11:30 AM","02:30 PM","05:30 PM"]}]},
+  {name:"Uran (Mora) To Khanderi (Kanhoji Angre Island)", fare:"0", groups:[
+    {label:"From Mora", times:["08:00 AM","10:00 AM","12:00 PM","02:00 PM","04:00 PM"]},
+    {label:"From Khanderi", times:["09:00 AM","11:00 AM","01:00 PM","03:00 PM","05:00 PM"]}]}
+];
+let C = {}, S = DEFAULT_SERVICES, L = {}, pics = [], bookings = [], enquiries = [], user = null;
+let adminTab = "set", svcDraft = null, unsubs = [], shownLoc = "", watch = null, lastSend = 0;
+
+const $ = id => document.getElementById(id);
+const g = k => (C[k] !== undefined && C[k] !== "") ? C[k] : F[k][1];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const page = () => (location.hash || "#home").slice(1);
+const src = p => `data:${p.mime || "image/jpeg"};base64,${p.data}`;
+const wa = t => window.open("https://wa.me/" + g("whatsapp") + "?text=" + encodeURIComponent(t), "_blank");
+const locKey = () => [L.enabled, L.lat, L.lng].join();
+const ago = ts => { if (!ts) return "unknown"; const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : new Date(ts).toLocaleString(); };
+
+const TABS = [["home","🏠","Home"],["enquiry","✉️","Enquiry"],["book","📅","Book"],["gallery","🖼️","Gallery"],["location","📍","Location"],["admin","🔒","Admin"]];
+function chrome(){
+  $("hdr").innerHTML = `<span class="logo">⚓</span><span>${esc(g("app_name"))}</span>`; document.title = g("app_name");
+  $("nav").innerHTML = TABS.map(t => `<a href="#${t[0]}" class="${page()===t[0]?'on':''}"><span>${t[1]}</span>${t[2]}</a>`).join("");
+}
+
+// ---------- live data (same Firebase database as before) ----------
+cfg.doc("content").onSnapshot(d => { C = d.exists ? d.data() : {}; dataChanged(); }, () => {});
+cfg.doc("services").onSnapshot(d => { S = (d.exists && Array.isArray(d.data().items)) ? d.data().items : DEFAULT_SERVICES; dataChanged(); }, () => {});
+cfg.doc("location").onSnapshot(d => { L = d.exists ? d.data() : {}; dataChanged(); }, () => {});
+db.collection("gallery").orderBy("createdAt").onSnapshot(q => { pics = q.docs.map(d => ({id:d.id, ...d.data()})); dataChanged(); }, () => {});
+auth.onAuthStateChanged(u => {
+  user = u; unsubs.forEach(f => f()); unsubs = []; bookings = []; enquiries = [];
+  if (!u) stopTrack();
+  if (u) ["bookings","enquiries"].forEach(col => unsubs.push(db.collection(col).orderBy("createdAt","desc").onSnapshot(q => {
+    const rows = q.docs.map(d => ({id:d.id, ...d.data()})); if (col === "bookings") bookings = rows; else enquiries = rows; dataChanged(); }, () => {})));
+  render();
+});
+// Re-draw only pages without typing areas, so forms are never wiped
+function dataChanged(){
+  chrome(); const p = page();
+  if (p === "home" || p === "gallery") render();
+  else if (p === "location" && locKey() !== shownLoc) render();
+  else if (p === "admin" && user && ["gal","book","enq"].includes(adminTab)) render();
+  else if (p === "admin" && user && adminTab === "loc") locStatus();
+}
+window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
+
+function render(){
+  chrome(); const p = page();
+  $("app").innerHTML = ({home, enquiry, book, gallery, location:locate, admin}[p] || home)();
+  const init = {enquiry:initEnquiry, book:initBook, admin:initAdmin}[p]; if (init) init();
+}
+
+// ---------- HOME ----------
+function homeImg(){
+  const p = pics.find(x => x.id === C.home_img_id) || pics[0];
+  return p ? `<div class="banner"><img src="${src(p)}" alt="${esc(g("app_name"))}"></div>` : "";
+}
+function home(){ return `
+ <div class="brand"><h1>${esc(g("app_name"))}</h1><p>${esc(g("tagline"))}</p></div>
+ ${homeImg()}
+ <div class="card"><h3>About</h3><p>${esc(g("about"))}</p></div>
+ <h2 class="sec">${esc(g("services_title"))}</h2>
+ <div class="svcs">${S.map((s,i) => `<div class="card"><div class="svc-h"><h3><span class="num">${i+1}</span>${esc(s.name)}</h3>${parseFloat(s.fare) ? `<span class="fare">₹${esc(s.fare)}</span>` : ""}</div>
+   ${(s.groups || []).map(gr => `<div class="grp"><b>${esc(gr.label)}</b><div class="chips">${(gr.times || []).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></div>`).join("")}</div>`).join("")}</div>
+ <a class="btn full" href="#book">Book Now</a>
+ <a class="btn alt full" href="tel:${esc(g("phone"))}">📞 Call ${esc(g("phone"))}</a>`; }
+
+// ---------- ENQUIRY ----------
+function enquiry(){ return `<h2>${esc(g("enq_title"))}</h2><p>${esc(g("enq_note"))}</p>
+ <div class="card"><label>Name</label><input id="n"><label>Phone</label><input id="p" type="tel"><label>Email (optional)</label><input id="e" type="email">
+ <label>Your enquiry</label><textarea id="m" rows="4"></textarea><div id="msg"></div><button class="full" id="go">Send Enquiry</button></div>`; }
+function initEnquiry(){
+  $("go").onclick = () => {
+    const n=$("n").value.trim(), p=$("p").value.trim(), e=$("e").value.trim(), m=$("m").value.trim();
+    if (!n || !p || !m) { $("msg").innerHTML = '<span class="err">Please fill name, phone and enquiry.</span>'; return; }
+    const text = `ENQUIRY\nName: ${n}\nPhone: ${p}\nEmail: ${e}\nMessage: ${m}`;
+    db.collection("enquiries").add({text, createdAt:Date.now()}); wa(text);
+    $("msg").innerHTML = '<span class="ok">✔ Enquiry saved. We will contact you soon.</span>'; ["n","p","e","m"].forEach(i => $(i).value = "");
+  };
+}
+
+// ---------- BOOK ----------
+function book(){
+  if (!S.length) return `<h2>${esc(g("book_title"))}</h2><p>No services available right now.</p>`;
+  return `<h2>${esc(g("book_title"))}</h2><p>${esc(g("book_note"))}</p>
+ <div class="card"><label>Full name</label><input id="n"><label>Phone</label><input id="p" type="tel">
+ <label>Service</label><select id="sv">${S.map((s,i) => `<option value="${i}">${esc(s.name)}</option>`).join("")}</select>
+ <label>Direction</label><select id="dr"></select><label>Time</label><select id="tm"></select>
+ <label>Travel date</label><input id="d" type="date"><label>Passengers</label><input id="x" type="number" min="1" value="1">
+ <label>Notes (optional)</label><input id="o"><h3 id="tot"></h3><div id="msg"></div><button class="full" id="go">Confirm Booking</button></div>`; }
+function initBook(){
+  if (!S.length) return;
+  $("d").min = new Date().toLocaleDateString("en-CA");
+  const svc = () => S[+$("sv").value];
+  const calc = () => { const t = (parseInt($("x").value) || 0) * (parseFloat(svc().fare) || 0); $("tot").textContent = t ? "Total: ₹" + t : ""; return t; };
+  const fillT = () => { const gr = (svc().groups || [])[+$("dr").value]; $("tm").innerHTML = ((gr && gr.times) || []).filter(Boolean).map(t => `<option>${esc(t)}</option>`).join(""); };
+  const fill = () => { $("dr").innerHTML = (svc().groups || []).map((gr,j) => `<option value="${j}">${esc(gr.label)}</option>`).join(""); fillT(); calc(); };
+  $("sv").onchange = fill; $("dr").onchange = fillT; $("x").oninput = calc; fill();
+  $("go").onclick = () => {
+    const n=$("n").value.trim(), p=$("p").value.trim(), d=$("d").value, tm=$("tm").value;
+    if (!n || !p || !d || !tm) { $("msg").innerHTML = '<span class="err">Please fill name, phone, date and time.</span>'; return; }
+    const dr = $("dr").selectedOptions[0].text, t = calc();
+    const text = `BOOKING\nName: ${n}\nPhone: ${p}\nService: ${svc().name}\nDirection: ${dr}\nTime: ${tm}\nDate: ${d.split("-").reverse().join("/")}\nPassengers: ${$("x").value}${t ? "\nTotal: ₹" + t : ""}\nNotes: ${$("o").value}`;
+    db.collection("bookings").add({text, createdAt:Date.now()}); wa(text);
+    $("msg").innerHTML = '<span class="ok">✔ Booking request saved. Confirm via WhatsApp.</span>';
+  };
+}
+
+// ---------- GALLERY (admin-uploaded only) ----------
+function gallery(){ return `<h2>${esc(g("gallery_title"))}</h2>` + (pics.length
+  ? `<div class="grid">${pics.map(p => `<img data-lb loading="lazy" alt="" src="${src(p)}">`).join("")}</div>` : "<p>No photos yet.</p>"); }
+
+// ---------- LIVE LOCATION ----------
+function locate(){
+  shownLoc = locKey(); const h = `<h2>${esc(g("loc_title"))}</h2>`;
+  if (!L.enabled) return h + `<div class="card"><p>📍 The launch location is not being shared right now.</p></div>`;
+  if (typeof L.lat !== "number" || typeof L.lng !== "number") return h + `<div class="card"><p>📍 Waiting for the first location update…</p></div>`;
+  return h + `<div class="card map"><iframe title="Launch location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${L.lat},${L.lng}&z=15&output=embed"></iframe></div>
+   <p><small>Last updated: ${esc(ago(L.updatedAt))}</small></p><a class="btn alt full" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${L.lat},${L.lng}">Open in Google Maps</a>`;
+}
+
+// ---------- ADMIN ----------
+function admin(){
+  if (!user) return `<h2>Admin Login</h2><div class="card"><label>Admin email</label><input id="ae" type="email" autocomplete="username"><label>Password</label><input id="ap" type="password" autocomplete="current-password">
+   <div id="msg"></div><button class="full" id="go">Login</button></div>`;
+  const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["loc","Location"],["book","Bookings"],["enq","Enquiries"],["acc","Account"]];
+  let body = "";
+  if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p>` + Object.keys(F).map(k =>
+      `<label>${esc(F[k][0])}</label><textarea data-k="${k}" rows="${["about","tagline"].includes(k) ? 3 : 1}">${esc(g(k))}</textarea>`).join("")
+      + `<div id="msg"></div><button class="full" id="save">Save changes</button></div>`;
+  else if (adminTab === "svc") { if (!svcDraft) svcDraft = JSON.parse(JSON.stringify(S)); body = svcEditor(); }
+  else if (adminTab === "gal") { const hid = (pics.find(x => x.id === C.home_img_id) || pics[0] || {}).id;
+    body = `<div class="card"><label>Add photos (JPG, PNG or small GIF) - only admin can upload</label><input id="f" type="file" accept="image/*" multiple><div id="msg"></div>
+      <small>The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.</small></div>
+      <div class="grid">${pics.map(p => `<div class="card" style="padding:8px;margin:0"><img alt="" src="${src(p)}">${p.id === hid ? '<span class="pill" style="margin-top:8px">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
+        <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
+  else if (adminTab === "loc") body = `<div class="card"><label class="chk"><input type="checkbox" id="locEn" ${L.enabled ? "checked" : ""}> Show launch location to clients (Location tab)</label>
+      <label class="chk"><input type="checkbox" id="locAuto" ${watch ? "checked" : ""}> Update location automatically from THIS phone</label>
+      <small>Use this on the phone kept on the launch. Keep the app open and the screen on, and allow location access.</small>
+      <label>Latitude (manual)</label><input id="lat" inputmode="decimal" value="${esc(L.lat)}"><label>Longitude (manual)</label><input id="lng" inputmode="decimal" value="${esc(L.lng)}">
+      <button class="sm" id="locSave">Save position</button><button class="sm gold" id="locNow">Use my current location</button><p id="locstat"></p><div id="msg"></div></div>`;
+  else if (adminTab === "book" || adminTab === "enq") { const rows = adminTab === "book" ? bookings : enquiries, col = adminTab === "book" ? "bookings" : "enquiries";
+    body = `<p><b>${rows.length} received (newest first)</b></p>` + rows.map(r => `<div class="card"><small>${new Date(r.createdAt).toLocaleString()}</small><p>${esc(r.text)}</p><button class="sm del" data-act="delRec" data-col="${col}" data-id="${r.id}">Delete</button></div>`).join(""); }
+  else body = `<div class="card"><p>Logged in as ${esc(user.email)}</p><small>To change the password: Firebase Console → Authentication → Users.</small><br><br><button id="out">Logout</button></div>`;
+  return `<div class="tabs">${tabs.map(t => `<button data-t="${t[0]}" class="${adminTab===t[0]?'on':''}">${t[1]}</button>`).join("")}</div>` + body;
+}
+function svcEditor(){
+  return `<p><b>Edit services and timings, then tap Save services.</b></p>` + svcDraft.map((s,i) => `<div class="card"><label>Service name</label><input data-f="name" data-i="${i}" value="${esc(s.name)}">
+    <label>Fare per person ₹ (0 = hide fare)</label><input data-f="fare" data-i="${i}" type="number" inputmode="numeric" value="${esc(s.fare)}">
+    ${(s.groups || []).map((gr,j) => `<div class="grp"><label>Direction heading (e.g. From Mora)</label><input data-f="label" data-i="${i}" data-j="${j}" value="${esc(gr.label)}">
+      <label>Timings</label><div class="trow">${(gr.times || []).map((t,k) => `<span class="tin"><input data-f="time" data-i="${i}" data-j="${j}" data-k="${k}" value="${esc(t)}" placeholder="07:00 AM"><button data-act="delTime" data-i="${i}" data-j="${j}" data-k="${k}">✕</button></span>`).join("")}</div>
+      <button class="sm" data-act="addTime" data-i="${i}" data-j="${j}">+ Add timing</button><button class="sm del" data-act="delGroup" data-i="${i}" data-j="${j}">Remove direction</button></div>`).join("")}
+    <button class="sm" data-act="addGroup" data-i="${i}">+ Add direction</button><button class="sm del" data-act="delSvc" data-i="${i}">Delete service</button></div>`).join("")
+    + `<button class="sm" data-act="addSvc">+ Add service</button><div id="msg"></div><button class="full" id="svsave">Save services</button>`;
+}
+
+$("app").addEventListener("input", e => {
+  const t = e.target, f = t.dataset.f; if (!f || !svcDraft) return;
+  const s = svcDraft[+t.dataset.i], j = +t.dataset.j, k = +t.dataset.k;
+  if (f === "name") s.name = t.value; else if (f === "fare") s.fare = t.value; else if (f === "label") s.groups[j].label = t.value; else if (f === "time") s.groups[j].times[k] = t.value;
+});
+$("app").addEventListener("click", e => {
+  const lb = e.target.closest("[data-lb]"); if (lb) { $("lb").querySelector("img").src = lb.src; $("lb").style.display = "flex"; return; }
+  const tb = e.target.closest("[data-t]"); if (tb) { adminTab = tb.dataset.t; if (adminTab !== "svc") svcDraft = null; render(); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j, k = +b.dataset.k, id = b.dataset.id;
+  if (a === "setHome") { cfg.doc("content").set({home_img_id:id}, {merge:true}); return; }
+  if (a === "delPic") { if (confirm("Delete this photo?")) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
+  if (a === "delRec") { if (confirm("Delete this record?")) db.collection(b.dataset.col).doc(id).delete(); return; }
+  if (!svcDraft) return;
+  if (a === "addSvc") svcDraft.push({name:"New service", fare:"0", groups:[{label:"From Mora", times:[""]}]});
+  else if (a === "delSvc") { if (!confirm("Delete this service?")) return; svcDraft.splice(i, 1); }
+  else if (a === "addGroup") svcDraft[i].groups.push({label:"New direction", times:[""]});
+  else if (a === "delGroup") svcDraft[i].groups.splice(j, 1);
+  else if (a === "addTime") svcDraft[i].groups[j].times.push("");
+  else if (a === "delTime") svcDraft[i].groups[j].times.splice(k, 1);
+  else return;
+  render();
+});
+$("lb").onclick = () => { $("lb").style.display = "none"; };
+
+function initAdmin(){
+  const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+  on("go", () => { $("go").disabled = true; auth.signInWithEmailAndPassword($("ae").value.trim(), $("ap").value)
+    .catch(() => { $("go").disabled = false; $("msg").innerHTML = '<span class="err">Login failed. Check email, password and internet.</span>'; }); });
+  on("out", () => auth.signOut());
+  on("save", () => { const o = {}; document.querySelectorAll("[data-k]").forEach(t => o[t.dataset.k] = t.value.trim());
+    cfg.doc("content").set(o, {merge:true}).then(() => $("msg").innerHTML = '<span class="ok">✔ Saved. Clients now see the changes.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
+  on("svsave", () => { const items = svcDraft.map(s => ({name:s.name.trim() || "Service", fare:String(s.fare || "0"),
+      groups:(s.groups || []).map(gr => ({label:gr.label.trim(), times:gr.times.map(t => t.trim()).filter(Boolean)}))}));
+    cfg.doc("services").set({items}).then(() => $("msg").innerHTML = '<span class="ok">✔ Services saved. Clients now see the new timings.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
+  const f = $("f"); if (f) f.onchange = async () => { $("msg").textContent = "Uploading..."; for (const file of f.files) await addPhoto(file); $("msg").textContent = "Done."; f.value = ""; };
+  const en = $("locEn"); if (en) { en.onchange = () => cfg.doc("location").set({enabled:en.checked}, {merge:true}); locStatus(); }
+  const au = $("locAuto"); if (au) au.onchange = async () => { if (au.checked) { await startTrack(); au.checked = !!watch; } else stopTrack(); };
+  on("locSave", () => { const la = parseFloat($("lat").value), ln = parseFloat($("lng").value);
+    if (isNaN(la) || isNaN(ln)) { $("msg").innerHTML = '<span class="err">Enter valid latitude and longitude.</span>'; return; } sendLoc(la, ln); $("msg").innerHTML = '<span class="ok">✔ Saved.</span>'; });
+  on("locNow", async () => { try { const p = await getPos(); $("lat").value = p.latitude; $("lng").value = p.longitude; sendLoc(p.latitude, p.longitude); $("msg").innerHTML = '<span class="ok">✔ Location updated.</span>'; }
+    catch (e) { $("msg").innerHTML = '<span class="err">Could not read GPS. Allow location permission.</span>'; } });
+}
+function locStatus(){ const el = $("locstat"); if (el) el.innerHTML = `<small>Clients see: ${L.enabled ? "<b>location ON</b>" : "<b>location OFF</b>"}${L.updatedAt ? " · last update " + esc(ago(L.updatedAt)) : ""}</small>`; }
+
+// ---------- GPS ----------
+const cap = () => window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Geolocation;
+function sendLoc(lat, lng){ cfg.doc("location").set({lat, lng, updatedAt:Date.now()}, {merge:true}); }
+function getPos(){ const c = cap(); if (c) return c.getCurrentPosition({enableHighAccuracy:true}).then(p => p.coords);
+  return new Promise((ok, no) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => ok(p.coords), no, {enableHighAccuracy:true}) : no()); }
+async function startTrack(){
+  const on = p => { if (!p) return; const n = Date.now(); if (n - lastSend < 15000) return; lastSend = n; sendLoc(p.coords.latitude, p.coords.longitude); };
+  try { const c = cap();
+    if (c) { await c.requestPermissions(); watch = {c, id: await c.watchPosition({enableHighAccuracy:true}, (p) => on(p))}; }
+    else if (navigator.geolocation) watch = {id: navigator.geolocation.watchPosition(on, () => alert("Could not read GPS. Allow location permission."), {enableHighAccuracy:true, maximumAge:10000})};
+  } catch (e) { alert("Location permission is needed."); }
+}
+function stopTrack(){ if (!watch) return; try { watch.c ? watch.c.clearWatch({id:watch.id}) : navigator.geolocation.clearWatch(watch.id); } catch (e) {} watch = null; }
+
+// ---------- PHOTO UPLOAD (stored inside Firestore, no paid Storage needed) ----------
+function addPhoto(file){ return new Promise(res => {
+  const done = data => db.collection("gallery").add({...data, createdAt:Date.now()}).then(res, res);
+  if (file.type === "image/gif" && file.size < 700 * 1024) { const r = new FileReader(); r.onload = () => done({data:String(r.result).split(",")[1], mime:"image/gif"}); r.onerror = res; r.readAsDataURL(file); return; }
+  const img = new Image(); img.onload = () => {
+    const s = Math.min(1, 1100 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(img.src); done({data:c.toDataURL("image/jpeg", .72).split(",")[1], mime:"image/jpeg"}); };
+  img.onerror = res; img.src = URL.createObjectURL(file); }); }
+
+render();
+if ("serviceWorker" in navigator && !window.Capacitor && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

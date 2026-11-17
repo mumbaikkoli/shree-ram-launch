@@ -1,0 +1,12 @@
+{
+  "name": "shree-ram-launch",
+  "version": "2.0.0",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/ios": "^6.1.2"
+  },
+  "devDependencies": { "@capacitor/cli": "^6.1.2" }
+}
