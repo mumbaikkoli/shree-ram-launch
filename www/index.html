@@ -48,6 +48,9 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
 nav a{position:relative}
+.lang{margin-left:auto;display:flex;border:1.5px solid rgba(255,255,255,.75);border-radius:8px;overflow:hidden;flex:none}
+.lang button{background:transparent;color:#fff;border:0;border-radius:0;padding:6px 11px;min-height:34px;font-size:13px;font-weight:700;box-shadow:none}.lang button.on{background:#f2a900;color:#0a3d62}
+.hn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill.ok{background:#2e7d32;color:#fff}.pill.blue{background:var(--pr);color:#fff}button.grn{background:#2e7d32}
 .bdg{position:absolute;top:3px;left:calc(50% + 7px);background:#e53935;color:#fff;border-radius:999px;min-width:18px;height:18px;padding:0 5px;font:700 11px/18px system-ui,sans-serif;font-style:normal;text-align:center;border:2px solid var(--card);box-sizing:content-box}
 .card.msg{border-left:4px solid var(--pr)}.card.msg.new{border-left-color:#e53935}
@@ -95,13 +98,87 @@ let msgs = [], editingMsg = null;
 let adminTab = "set", svcDraft = null, unsubs = [], shownLoc = "", watch = null, lastSend = 0;
 
 const $ = id => document.getElementById(id);
-const g = k => (C[k] !== undefined && C[k] !== "") ? C[k] : F[k][1];
+const MR = {
+ "Home":"मुख्यपृष्ठ","Enquiry":"चौकशी","Gallery":"गॅलरी","Messages":"संदेश","Location":"स्थान","Admin":"अ‍ॅडमिन","Settings":"सेटिंग्ज","Services":"सेवा","Account":"खाते",
+ "Shree Ram Launch Service":"श्री राम लाँच सर्व्हिस",
+ "Safe & comfortable passenger launch service from Uran (Mora)":"उरण (मोरा) येथून सुरक्षित व आरामदायी प्रवासी लाँच सेवा",
+ "Shree Ram Launch Service runs passenger launches from Mora Jetty, Uran to Mumbai (Colaba) and Khanderi (Kanhoji Angre Island), with life jackets and experienced crew.":"श्री राम लाँच सर्व्हिस मोरा जेटी, उरण येथून मुंबई (कुलाबा) आणि खांदेरी (कान्होजी आंग्रे बेट) येथे प्रवासी लाँच सेवा चालवते. लाइफ जॅकेट आणि अनुभवी कर्मचारी उपलब्ध आहेत.",
+ "On Demand Enquiry":"मागणीनुसार सेवेसाठी चौकशी",
+ "Send an enquiry for our On Demand Service. We will confirm your trip once payment is received.":"आमच्या मागणीनुसार सेवेसाठी चौकशी पाठवा. पैसे मिळाल्यानंतर आम्ही तुमची फेरी निश्चित करू.",
+ "Live Launch Location":"लाँचचे थेट स्थान",
+ "Regular Daily Service":"नियमित दैनिक सेवा","On Demand Service":"मागणीनुसार सेवा",
+ "Uran (Mora) To Mumbai (Colaba)":"उरण (मोरा) ते मुंबई (कुलाबा)","Uran (Mora) To Khanderi (Kanhoji Angre Island)":"उरण (मोरा) ते खांदेरी (कान्होजी आंग्रे बेट)",
+ "From Mora":"मोऱ्यावरून","From Colaba":"कुलाब्यावरून","From Khanderi":"खांदेरीवरून","New direction":"नवीन दिशा","New service":"नवीन सेवा",
+ "App heading / name":"अ‍ॅपचे शीर्षक / नाव","Home tagline":"मुख्यपृष्ठ घोषवाक्य","About text":"आमच्याबद्दल मजकूर","Services heading":"सेवा शीर्षक","Phone number":"फोन नंबर",
+ "WhatsApp number (country code, no +)":"व्हॉट्सअ‍ॅप नंबर (देश कोडसह, + शिवाय)","Enquiry page title":"चौकशी पानाचे शीर्षक","Enquiry page note":"चौकशी पानावरील सूचना",
+ "Gallery page title":"गॅलरी पानाचे शीर्षक","Messages page title":"संदेश पानाचे शीर्षक","Location page title":"स्थान पानाचे शीर्षक",
+ "– English":"– इंग्रजी","– Marathi":"– मराठी",
+ "About":"आमच्याबद्दल","On Demand":"मागणीनुसार","Available on request - please send an enquiry.":"मागणीनुसार उपलब्ध - कृपया चौकशी पाठवा.","Send Enquiry":"चौकशी पाठवा",
+ "Full name":"पूर्ण नाव","Phone":"फोन","Service":"सेवा","From (pick-up)":"कोठून (चढण्याचे ठिकाण)","To (destination)":"कोठे (गंतव्य ठिकाण)","Travel date":"प्रवासाची तारीख","Preferred time":"पसंतीची वेळ","Passengers":"प्रवासी संख्या","Notes (optional)":"टिपा (ऐच्छिक)",
+ "On Demand Service is not available right now.":"मागणीनुसार सेवा सध्या उपलब्ध नाही.","My Booking":"माझी बुकिंग","You have no bookings yet.":"तुमची अद्याप कोणतीही बुकिंग नाही.",
+ "Cancel":"रद्द करा","Trip Completed":"फेरी पूर्ण","Paid & Confirmed":"पैसे भरले व निश्चित","Enquiry – awaiting confirmation":"चौकशी – पुष्टीची प्रतीक्षा",
+ "Please fill all fields (notes are optional).":"कृपया सर्व माहिती भरा (टिपा ऐच्छिक आहेत).","✔ Enquiry sent. See it under My Booking below.":"✔ चौकशी पाठवली. खाली 'माझी बुकिंग' मध्ये पहा.",
+ "Could not send. Check your internet and try again.":"पाठवता आले नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
+ "Cancel this booking? It will be removed everywhere.":"ही बुकिंग रद्द करायची? ती सर्व ठिकाणांहून काढली जाईल.","Could not cancel. Please call us.":"रद्द करता आले नाही. कृपया आम्हाला फोन करा.",
+ "No photos yet.":"अद्याप फोटो नाहीत.","NEW":"नवीन","No messages yet.":"अद्याप संदेश नाहीत.","just now":"आत्ताच",
+ "📍 The launch location is not being shared right now.":"📍 लाँचचे स्थान सध्या शेअर केले जात नाही.","📍 Waiting for the first location update…":"📍 पहिल्या स्थान अद्यतनाची प्रतीक्षा…","Open in Google Maps":"गुगल मॅप्समध्ये उघडा",
+ "Admin Login":"अ‍ॅडमिन लॉगिन","Admin email":"अ‍ॅडमिन ईमेल","Password":"पासवर्ड","Login":"लॉगिन","Login failed. Check email, password and internet.":"लॉगिन अयशस्वी. ईमेल, पासवर्ड व इंटरनेट तपासा.","Logout":"लॉगआउट",
+ "Edit any text, then tap Save. Clients see changes immediately.":"कोणताही मजकूर बदला व जतन करा दाबा. ग्राहकांना बदल लगेच दिसतील.","Save changes":"बदल जतन करा","✔ Saved. Clients now see the changes.":"✔ जतन झाले. ग्राहकांना आता बदल दिसतील.","Could not save.":"जतन करता आले नाही.",
+ "Edit services and timings, then tap Save services.":"सेवा व वेळा बदला, मग 'सेवा जतन करा' दाबा.","Service name":"सेवेचे नाव","Service name (Marathi)":"सेवेचे नाव (मराठी)",
+ "Route / description (shown under the name)":"मार्ग / वर्णन (नावाखाली दिसेल)","Route / description (Marathi)":"मार्ग / वर्णन (मराठी)",
+ "On Demand Service (clients can send an enquiry for it)":"मागणीनुसार सेवा (ग्राहक यासाठी चौकशी पाठवू शकतात)","Fare per person ₹ (0 = hide fare)":"प्रति व्यक्ती भाडे ₹ (0 = भाडे लपवा)",
+ "Direction heading (e.g. From Mora)":"दिशा शीर्षक (उदा. मोऱ्यावरून)","Direction heading (Marathi)":"दिशा शीर्षक (मराठी)","Timings":"वेळा","+ Add timing":"+ वेळ जोडा","Remove direction":"दिशा काढा","+ Add direction":"+ दिशा जोडा",
+ "Delete service":"सेवा हटवा","+ Add service":"+ सेवा जोडा","Save services":"सेवा जतन करा","✔ Services saved. Clients now see the new timings.":"✔ सेवा जतन झाल्या. ग्राहकांना आता नवीन वेळा दिसतील.",
+ "Delete this service?":"ही सेवा हटवायची?","Delete this photo?":"हा फोटो हटवायचा?","Delete this record?":"ही नोंद हटवायची?","Delete this message for all clients?":"हा संदेश सर्व ग्राहकांसाठी हटवायचा?",
+ "Cancel this enquiry? It will also be removed from the client's My Booking.":"ही चौकशी रद्द करायची? ती ग्राहकाच्या 'माझी बुकिंग' मधूनही काढली जाईल.","Cancel this booking and move it back to Enquiry?":"ही बुकिंग रद्द करून चौकशीमध्ये परत न्यायची?",
+ "Add photos (JPG, PNG or small GIF) - only admin can upload":"फोटो जोडा (JPG, PNG किंवा लहान GIF) - फक्त अ‍ॅडमिन अपलोड करू शकतो",
+ "The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.":"★ मुख्यपृष्ठ प्रतिमा चिन्हांकित फोटो मुख्यपृष्ठावर दिसतो. कोणताही निवडला नसल्यास पहिला फोटो वापरला जातो.",
+ "★ Home image":"★ मुख्यपृष्ठ प्रतिमा","Set as Home image":"मुख्यपृष्ठ प्रतिमा म्हणून निवडा","Delete":"हटवा","Uploading...":"अपलोड होत आहे...","Done.":"पूर्ण.",
+ "New message to all clients":"सर्व ग्राहकांसाठी नवीन संदेश","Message in Marathi (optional – clients on MAR see this)":"मराठीतील संदेश (ऐच्छिक – MAR निवडलेल्या ग्राहकांना दिसेल)","Post message":"संदेश पाठवा",
+ "Type a message first.":"आधी संदेश लिहा.","✔ Posted. Clients can see it now.":"✔ संदेश पाठवला. ग्राहकांना आता दिसेल.","Could not post. Check you are logged in and the database rules are updated.":"पाठवता आले नाही. लॉगिन आणि डेटाबेस नियम तपासा.",
+ "Edit":"संपादित करा","Save":"जतन करा","e.g. Service cancelled today due to rough sea":"उदा. समुद्र खवळलेला असल्याने आज सेवा रद्द",
+ "Show launch location to clients (Location tab)":"ग्राहकांना लाँचचे स्थान दाखवा (स्थान टॅब)","Update location automatically from THIS phone":"या फोनवरून स्थान आपोआप अद्यतनित करा",
+ "Use this on the phone kept on the launch. Keep the app open and the screen on, and allow location access.":"हे लाँचवर ठेवलेल्या फोनवर वापरा. अ‍ॅप उघडे व स्क्रीन चालू ठेवा आणि स्थानाची परवानगी द्या.",
+ "Latitude (manual)":"अक्षांश (हाताने)","Longitude (manual)":"रेखांश (हाताने)","Save position":"स्थान जतन करा","Use my current location":"माझे सध्याचे स्थान वापरा","Enter valid latitude and longitude.":"योग्य अक्षांश व रेखांश टाका.",
+ "✔ Saved.":"✔ जतन झाले.","✔ Location updated.":"✔ स्थान अद्यतनित झाले.","Could not read GPS. Allow location permission.":"GPS वाचता आले नाही. स्थानाची परवानगी द्या.","Location permission is needed.":"स्थानाची परवानगी आवश्यक आहे.",
+ "Clients see:":"ग्राहकांना दिसते:","location ON":"स्थान चालू","location OFF":"स्थान बंद","✔ Paid and Confirmed":"✔ पैसे भरले व निश्चित",
+ "To change the password: Firebase Console → Authentication → Users.":"पासवर्ड बदलण्यासाठी: Firebase Console → Authentication → Users."
+};
+const RX = [
+ [/^📞 Call (.*)$/, p => "📞 फोन करा " + p], [/^Last updated: (.*)$/, t => "शेवटचे अद्यतन: " + t], [/^Notes: ([\s\S]*)$/, t => "टिपा: " + t],
+ [/^(.+) · edited$/, d => d + " · संपादित"], [/^(.+) · older enquiry$/, d => d + " · जुनी चौकशी"],
+ [/^(\d+) enquiries \(newest first\)$/, n => n + " चौकशी (नवीन प्रथम)"], [/^(\d+) upcoming · (\d+) completed$/, (a, b) => a + " आगामी · " + b + " पूर्ण"],
+ [/^(\d+) posted \(newest first\)$/, n => n + " संदेश (नवीन प्रथम)"], [/^Enquiry \((\d+)\)$/, n => "चौकशी (" + n + ")"], [/^Bookings \((\d+)\)$/, n => "बुकिंग (" + n + ")"],
+ [/^Logged in as (.*)$/, e => "लॉगिन: " + e], [/^· last update (.*)$/, t => "· शेवटचे अद्यतन " + t]
+];
+// ---------- language (EN / MAR) ----------
+let lang = (() => { try { return localStorage.getItem("shreeram_lang") === "mr" ? "mr" : "en"; } catch (e) { return "en"; } })();
+const T = s => lang === "mr" ? (MR[s] || s) : s;
+const tx = (en, mr) => lang === "mr" ? (mr || MR[en] || en) : en;
+const gEn = k => (C[k] !== undefined && C[k] !== "") ? C[k] : F[k][1];
+const g = k => lang === "mr" ? (C[k + "_mr"] || MR[gEn(k)] || gEn(k)) : gEn(k);
+const mt = m => lang === "mr" && m.textMr ? m.textMr : m.text;
+const svcName = n => { const s = S.find(x => x.name === n); return s ? tx(s.name, s.name_mr) : tx(n); };
+function trText(v){ const k = v.trim(); if (!k) return v; let r = MR[k];
+  if (r === undefined) for (const [re, f] of RX) { const m = k.match(re); if (m) { r = f(...m.slice(1)); break; } }
+  return r === undefined ? v : v.replace(k, () => r); }
+function trNode(n){
+  if (lang !== "mr") return;
+  const skip = e => e && e.closest && e.closest("textarea,script,style");
+  if (n.nodeType === 3) { if (!skip(n.parentElement)) { const v = trText(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; } return; }
+  if (n.nodeType !== 1) return;
+  const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT); let t;
+  while ((t = w.nextNode())) { if (skip(t.parentElement)) continue; const v = trText(t.nodeValue); if (v !== t.nodeValue) t.nodeValue = v; }
+  [n, ...n.querySelectorAll("[placeholder]")].forEach(e => { const p = e.getAttribute("placeholder"); if (p && MR[p]) e.setAttribute("placeholder", MR[p]); });
+}
+function setLang(l){ lang = l; try { localStorage.setItem("shreeram_lang", l); } catch (e) {} document.documentElement.lang = l === "mr" ? "mr" : "en"; render(); }
+
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const page = () => { const h = (location.hash || "#home").slice(1); return h === "book" ? "enquiry" : h; };
 const src = p => `data:${p.mime || "image/jpeg"};base64,${p.data}`;
-const wa = t => window.open("https://wa.me/" + g("whatsapp") + "?text=" + encodeURIComponent(t), "_blank");
+const wa = t => window.open("https://wa.me/" + gEn("whatsapp") + "?text=" + encodeURIComponent(t), "_blank");
 const locKey = () => [L.enabled, L.lat, L.lng].join();
-const ago = ts => { if (!ts) return "unknown"; const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : new Date(ts).toLocaleString(); };
+const ago = ts => { if (!ts) return "unknown"; const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? T("just now") : m < 60 ? (lang === "mr" ? m + " मिनिटांपूर्वी" : m + " min ago") : new Date(ts).toLocaleString(lang === "mr" ? "mr-IN" : []); };
 
 // ---------- enquiry / booking helpers ----------
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -112,7 +189,7 @@ const isOD = s => s.onDemand === undefined ? /on[\s-]*demand/i.test(s.name || ""
 const odServices = () => S.filter(isOD);
 const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
 const statusPill = r => isDone(r) ? '<span class="pill ok">Trip Completed</span>' : r.status === "confirmed" ? '<span class="pill blue">Paid &amp; Confirmed</span>' : '<span class="pill">Enquiry – awaiting confirmation</span>';
-const recHtml = r => `<p><b>${esc(r.name)}</b> · ${esc(r.phone)}</p><p>${esc(r.service)}\n${esc(r.from)} → ${esc(r.to)}</p><p>📅 ${esc(fmtDate(r.date))} · 🕒 ${esc(t12(r.time))} · 👥 ${esc(r.pax)}</p>${r.notes ? `<p>Notes: ${esc(r.notes)}</p>` : ""}`;
+const recHtml = r => `<p><b>${esc(r.name)}</b> · ${esc(r.phone)}</p><p>${esc(svcName(r.service))}\n${esc(r.from)} → ${esc(r.to)}</p><p>📅 ${esc(fmtDate(r.date))} · 🕒 ${esc(t12(r.time))} · 👥 ${esc(r.pax)}</p>${r.notes ? `<p>Notes: ${esc(r.notes)}</p>` : ""}`;
 // the client's own enquiries are remembered on the client's device (by their private IDs)
 const MK = "shreeram_my_v1";
 const myIds = () => { try { return JSON.parse(localStorage.getItem(MK) || "[]"); } catch (e) { return []; } };
@@ -139,11 +216,11 @@ const getRead = () => { try { return JSON.parse(localStorage.getItem(RK) || "{}"
 const isNew = (m, r) => !r[m.id] || r[m.id] < (m.updatedAt || m.createdAt);
 const unreadCount = () => { const r = getRead(); return msgs.filter(m => isNew(m, r)).length; };
 const markRead = () => { try { const r = {}; msgs.forEach(m => r[m.id] = m.updatedAt || m.createdAt); localStorage.setItem(RK, JSON.stringify(r)); } catch (e) {} };
-const fmt = ts => new Date(ts).toLocaleString([], {day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit"});
+const fmt = ts => new Date(ts).toLocaleString(lang === "mr" ? "mr-IN" : [], {day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit"});
 
 const TABS = [["home","🏠","Home"],["enquiry","✉️","Enquiry"],["gallery","🖼️","Gallery"],["messages","💬","Messages"],["location","📍","Location"],["admin","🔒","Admin"]];
 function chrome(){
-  $("hdr").innerHTML = `<span class="logo">⚓</span><span>${esc(g("app_name"))}</span>`; document.title = g("app_name");
+  $("hdr").innerHTML = `<span class="logo">⚓</span><span class="hn">${esc(g("app_name"))}</span><span class="lang"><button data-lang="en" class="${lang === "en" ? "on" : ""}">EN</button><button data-lang="mr" class="${lang === "mr" ? "on" : ""}">MAR</button></span>`; document.title = g("app_name");
   $("nav").innerHTML = TABS.map(t => `<a href="#${t[0]}" class="${page()===t[0]?'on':''}"><span>${t[1]}</span>${t[2]}${t[0]==="messages"&&unreadCount()?`<i class="bdg">${unreadCount()>99?"99+":unreadCount()}</i>`:""}</a>`).join("");
 }
 
@@ -190,16 +267,16 @@ function home(){ return `
  ${homeImg()}
  <div class="card"><h3>About</h3><p>${esc(g("about"))}</p></div>
  <h2 class="sec">${esc(g("services_title"))}</h2>
- <div class="svcs">${S.map((s,i) => `<div class="card"><div class="svc-h"><h3><span class="num">${i+1}</span>${esc(s.name)}</h3>${isOD(s) ? '<span class="pill">On Demand</span>' : ""}${parseFloat(s.fare) ? `<span class="fare">₹${esc(s.fare)}</span>` : ""}</div>
-   ${s.sub ? `<p style="margin:0 0 6px;color:var(--mut)">${esc(s.sub)}</p>` : ""}${isOD(s) && !(s.groups || []).some(gr => (gr.times || []).some(Boolean)) ? "<p><small>Available on request - please send an enquiry.</small></p>" : ""}${(s.groups || []).map(gr => `<div class="grp"><b>${esc(gr.label)}</b><div class="chips">${(gr.times || []).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></div>`).join("")}</div>`).join("")}</div>
+ <div class="svcs">${S.map((s,i) => `<div class="card"><div class="svc-h"><h3><span class="num">${i+1}</span>${esc(tx(s.name, s.name_mr))}</h3>${isOD(s) ? '<span class="pill">On Demand</span>' : ""}${parseFloat(s.fare) ? `<span class="fare">₹${esc(s.fare)}</span>` : ""}</div>
+   ${s.sub ? `<p style="margin:0 0 6px;color:var(--mut)">${esc(tx(s.sub, s.sub_mr))}</p>` : ""}${isOD(s) && !(s.groups || []).some(gr => (gr.times || []).some(Boolean)) ? "<p><small>Available on request - please send an enquiry.</small></p>" : ""}${(s.groups || []).map(gr => `<div class="grp"><b>${esc(tx(gr.label, gr.label_mr))}</b><div class="chips">${(gr.times || []).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></div>`).join("")}</div>`).join("")}</div>
  <a class="btn full" href="#enquiry">Send Enquiry</a>
- <a class="btn alt full" href="tel:${esc(g("phone"))}">📞 Call ${esc(g("phone"))}</a>`; }
+ <a class="btn alt full" href="tel:${esc(gEn("phone"))}">📞 Call ${esc(gEn("phone"))}</a>`; }
 
 // ---------- ENQUIRY (On Demand Service) + MY BOOKING ----------
 function enquiry(){
   const od = odServices();
   return `<h2>${esc(g("enq_title"))}</h2><p>${esc(g("enq_note"))}</p>` + (od.length ? `<div class="card"><label>Full name</label><input id="n"><label>Phone</label><input id="p" type="tel" inputmode="tel">
-   <label>Service</label><select id="sv">${od.map((s, i) => `<option value="${i}">${esc(s.name)}${s.sub ? " - " + esc(s.sub) : ""}</option>`).join("")}</select>
+   <label>Service</label><select id="sv">${od.map((s, i) => `<option value="${i}">${esc(tx(s.name, s.name_mr))}${s.sub ? " - " + esc(tx(s.sub, s.sub_mr)) : ""}</option>`).join("")}</select>
    <label>From (pick-up)</label><input id="fr" value="Mora Jetty, Uran"><label>To (destination)</label><input id="to">
    <label>Travel date</label><input id="d" type="date"><label>Preferred time</label><input id="tm" type="time">
    <label>Passengers</label><input id="x" type="number" min="1" value="1"><label>Notes (optional)</label><textarea id="o" rows="2"></textarea>
@@ -232,7 +309,7 @@ function gallery(){ return `<h2>${esc(g("gallery_title"))}</h2>` + (pics.length
 function messages(){
   const r = getRead(), items = msgs.map(m => ({m, n:isNew(m, r)}));
   markRead();
-  return `<h2>${esc(g("msg_title"))}</h2>` + (items.length ? items.map(({m, n}) => `<div class="card msg${n ? " new" : ""}"><div class="mh"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small>${n ? '<span class="newp">NEW</span>' : ""}</div><p>${esc(m.text)}</p></div>`).join("")
+  return `<h2>${esc(g("msg_title"))}</h2>` + (items.length ? items.map(({m, n}) => `<div class="card msg${n ? " new" : ""}"><div class="mh"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small>${n ? '<span class="newp">NEW</span>' : ""}</div><p>${esc(mt(m))}</p></div>`).join("")
     : `<div class="card"><p>No messages yet.</p></div>`);
 }
 
@@ -251,8 +328,10 @@ function admin(){
    <div id="msg"></div><button class="full" id="go">Login</button></div>`;
   const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["msg","Messages"],["loc","Location"],["enq","Enquiry (" + enquiries.filter(r => r.status !== "confirmed").length + ")"],["book","Bookings (" + enquiries.filter(r => r.status === "confirmed").length + ")"],["acc","Account"]];
   let body = "";
-  if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p>` + Object.keys(F).map(k =>
-      `<label>${esc(F[k][0])}</label><textarea data-k="${k}" rows="${["about","tagline"].includes(k) ? 3 : 1}">${esc(g(k))}</textarea>`).join("")
+  if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p>` + Object.keys(F).map(k => {
+      const rows = ["about","tagline","enq_note"].includes(k) ? 3 : 1, one = k === "phone" || k === "whatsapp";
+      return `<label>${esc(F[k][0])}${one ? "" : "<span> – English</span>"}</label><textarea data-k="${k}" rows="${rows}">${esc(gEn(k))}</textarea>`
+        + (one ? "" : `<label>${esc(F[k][0])}<span> – Marathi</span></label><textarea data-k="${k}_mr" rows="${rows}">${esc(C[k + "_mr"] || MR[gEn(k)] || "")}</textarea>`); }).join("")
       + `<div id="msg"></div><button class="full" id="save">Save changes</button></div>`;
   else if (adminTab === "svc") { if (!svcDraft) svcDraft = JSON.parse(JSON.stringify(S)); body = svcEditor(); }
   else if (adminTab === "gal") { const hid = (pics.find(x => x.id === C.home_img_id) || pics[0] || {}).id;
@@ -260,7 +339,7 @@ function admin(){
       <small>The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.</small></div>
       <div class="grid">${pics.map(p => `<div class="card" style="padding:8px;margin:0"><img alt="" src="${src(p)}">${p.id === hid ? '<span class="pill" style="margin-top:8px">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
         <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
-  else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
+  else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><label>Message in Marathi (optional – clients on MAR see this)</label><textarea id="mtextmr" rows="4"></textarea><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
   else if (adminTab === "loc") body = `<div class="card"><label class="chk"><input type="checkbox" id="locEn" ${L.enabled ? "checked" : ""}> Show launch location to clients (Location tab)</label>
       <label class="chk"><input type="checkbox" id="locAuto" ${watch ? "checked" : ""}> Update location automatically from THIS phone</label>
       <small>Use this on the phone kept on the launch. Keep the app open and the screen on, and allow location access.</small>
@@ -282,27 +361,30 @@ function bookCard(r){
 }
 function msgListAdmin(){
   return `<p><b>${msgs.length} posted (newest first)</b></p>` + msgs.map(m => editingMsg === m.id
-    ? `<div class="card"><textarea id="medit" rows="4">${esc(m.text)}</textarea><button class="sm" data-act="saveMsg" data-id="${m.id}">Save</button><button class="sm gold" data-act="cancelMsg">Cancel</button></div>`
-    : `<div class="card"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small><p>${esc(m.text)}</p><button class="sm" data-act="editMsg" data-id="${m.id}">Edit</button><button class="sm del" data-act="delMsg" data-id="${m.id}">Delete</button></div>`).join("");
+    ? `<div class="card"><textarea id="medit" rows="4">${esc(m.text)}</textarea><label>Message in Marathi (optional – clients on MAR see this)</label><textarea id="meditmr" rows="4">${esc(m.textMr || "")}</textarea><button class="sm" data-act="saveMsg" data-id="${m.id}">Save</button><button class="sm gold" data-act="cancelMsg">Cancel</button></div>`
+    : `<div class="card"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small><p>${esc(m.text)}</p>${m.textMr ? `<p>${esc(m.textMr)}</p>` : ""}<button class="sm" data-act="editMsg" data-id="${m.id}">Edit</button><button class="sm del" data-act="delMsg" data-id="${m.id}">Delete</button></div>`).join("");
 }
 function refreshMsgList(){ const el = $("msglist"); if (el && editingMsg === null) el.innerHTML = msgListAdmin(); }
 
 function svcEditor(){
+  const mrv = (v, en) => esc(v ?? MR[en] ?? "");
   return `<p><b>Edit services and timings, then tap Save services.</b></p>` + svcDraft.map((s,i) => `<div class="card"><label>Service name</label><input data-f="name" data-i="${i}" value="${esc(s.name)}">
+    <label>Service name (Marathi)</label><input data-f="name_mr" data-i="${i}" value="${mrv(s.name_mr, s.name)}">
     <label>Route / description (shown under the name)</label><input data-f="sub" data-i="${i}" value="${esc(s.sub)}">
+    <label>Route / description (Marathi)</label><input data-f="sub_mr" data-i="${i}" value="${mrv(s.sub_mr, s.sub)}">
     <label class="chk"><input type="checkbox" data-f="od" data-i="${i}" ${isOD(s) ? "checked" : ""}> On Demand Service (clients can send an enquiry for it)</label>
     <label>Fare per person ₹ (0 = hide fare)</label><input data-f="fare" data-i="${i}" type="number" inputmode="numeric" value="${esc(s.fare)}">
     ${(s.groups || []).map((gr,j) => `<div class="grp"><label>Direction heading (e.g. From Mora)</label><input data-f="label" data-i="${i}" data-j="${j}" value="${esc(gr.label)}">
+      <label>Direction heading (Marathi)</label><input data-f="label_mr" data-i="${i}" data-j="${j}" value="${mrv(gr.label_mr, gr.label)}">
       <label>Timings</label><div class="trow">${(gr.times || []).map((t,k) => `<span class="tin"><input data-f="time" data-i="${i}" data-j="${j}" data-k="${k}" value="${esc(t)}" placeholder="07:00 AM"><button data-act="delTime" data-i="${i}" data-j="${j}" data-k="${k}">✕</button></span>`).join("")}</div>
       <button class="sm" data-act="addTime" data-i="${i}" data-j="${j}">+ Add timing</button><button class="sm del" data-act="delGroup" data-i="${i}" data-j="${j}">Remove direction</button></div>`).join("")}
     <button class="sm" data-act="addGroup" data-i="${i}">+ Add direction</button><button class="sm del" data-act="delSvc" data-i="${i}">Delete service</button></div>`).join("")
     + `<button class="sm" data-act="addSvc">+ Add service</button><div id="msg"></div><button class="full" id="svsave">Save services</button>`;
 }
-
 $("app").addEventListener("input", e => {
   const t = e.target, f = t.dataset.f; if (!f || !svcDraft) return;
   const s = svcDraft[+t.dataset.i], j = +t.dataset.j, k = +t.dataset.k;
-  if (f === "name") s.name = t.value; else if (f === "sub") s.sub = t.value; else if (f === "fare") s.fare = t.value; else if (f === "label") s.groups[j].label = t.value; else if (f === "time") s.groups[j].times[k] = t.value;
+  if (f === "name") s.name = t.value; else if (f === "name_mr") s.name_mr = t.value; else if (f === "sub_mr") s.sub_mr = t.value; else if (f === "label_mr") s.groups[j].label_mr = t.value; else if (f === "sub") s.sub = t.value; else if (f === "fare") s.fare = t.value; else if (f === "label") s.groups[j].label = t.value; else if (f === "time") s.groups[j].times[k] = t.value;
 });
 $("app").addEventListener("change", e => { const t = e.target; if (t.dataset.f === "od" && svcDraft) svcDraft[+t.dataset.i].onDemand = t.checked; });
 $("app").addEventListener("click", e => {
@@ -311,19 +393,19 @@ $("app").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j, k = +b.dataset.k, id = b.dataset.id;
   if (a === "setHome") { cfg.doc("content").set({home_img_id:id}, {merge:true}); return; }
-  if (a === "delPic") { if (confirm("Delete this photo?")) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
-  if (a === "delRec") { if (confirm("Delete this record?")) db.collection(b.dataset.col).doc(id).delete(); return; }
+  if (a === "delPic") { if (confirm(T("Delete this photo?"))) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
+  if (a === "delRec") { if (confirm(T("Delete this record?"))) db.collection(b.dataset.col).doc(id).delete(); return; }
   if (a === "confirmEnq") { db.collection("enquiries").doc(id).update({status:"confirmed", confirmedAt:Date.now()}); return; }
-  if (a === "cancelEnq") { if (confirm("Cancel this enquiry? It will also be removed from the client's My Booking.")) db.collection("enquiries").doc(id).delete(); return; }
-  if (a === "revertBook") { if (confirm("Cancel this booking and move it back to Enquiry?")) db.collection("enquiries").doc(id).update({status:"enquiry", confirmedAt:firebase.firestore.FieldValue.delete()}); return; }
-  if (a === "myCancel") { if (confirm("Cancel this booking? It will be removed everywhere.")) db.collection("enquiries").doc(id).delete().catch(() => alert("Could not cancel. Please call us.")); return; }
+  if (a === "cancelEnq") { if (confirm(T("Cancel this enquiry? It will also be removed from the client's My Booking."))) db.collection("enquiries").doc(id).delete(); return; }
+  if (a === "revertBook") { if (confirm(T("Cancel this booking and move it back to Enquiry?"))) db.collection("enquiries").doc(id).update({status:"enquiry", confirmedAt:firebase.firestore.FieldValue.delete()}); return; }
+  if (a === "myCancel") { if (confirm(T("Cancel this booking? It will be removed everywhere."))) db.collection("enquiries").doc(id).delete().catch(() => alert(T("Could not cancel. Please call us."))); return; }
   if (a === "editMsg") { editingMsg = id; $("msglist").innerHTML = msgListAdmin(); return; }
   if (a === "cancelMsg") { editingMsg = null; refreshMsgList(); return; }
-  if (a === "saveMsg") { const t = $("medit").value.trim(); if (!t) return; db.collection("messages").doc(id).update({text:t, updatedAt:Date.now()}); editingMsg = null; refreshMsgList(); return; }
-  if (a === "delMsg") { if (confirm("Delete this message for all clients?")) db.collection("messages").doc(id).delete(); return; }
+  if (a === "saveMsg") { const t = $("medit").value.trim(); if (!t) return; db.collection("messages").doc(id).update({text:t, textMr:($("meditmr").value || "").trim(), updatedAt:Date.now()}); editingMsg = null; refreshMsgList(); return; }
+  if (a === "delMsg") { if (confirm(T("Delete this message for all clients?"))) db.collection("messages").doc(id).delete(); return; }
   if (!svcDraft) return;
   if (a === "addSvc") svcDraft.push({name:"New service", sub:"", onDemand:false, fare:"0", groups:[{label:"From Mora", times:[""]}]});
-  else if (a === "delSvc") { if (!confirm("Delete this service?")) return; svcDraft.splice(i, 1); }
+  else if (a === "delSvc") { if (!confirm(T("Delete this service?"))) return; svcDraft.splice(i, 1); }
   else if (a === "addGroup") svcDraft[i].groups.push({label:"New direction", times:[""]});
   else if (a === "delGroup") svcDraft[i].groups.splice(j, 1);
   else if (a === "addTime") svcDraft[i].groups[j].times.push("");
@@ -339,13 +421,13 @@ function initAdmin(){
     .catch(() => { $("go").disabled = false; $("msg").innerHTML = '<span class="err">Login failed. Check email, password and internet.</span>'; }); });
   on("out", () => auth.signOut());
   on("mpost", () => { const t = $("mtext").value.trim(); if (!t) { $("msg").innerHTML = '<span class="err">Type a message first.</span>'; return; }
-    const n = Date.now(); db.collection("messages").add({text:t, createdAt:n, updatedAt:n})
-      .then(() => { $("mtext").value = ""; $("msg").innerHTML = '<span class="ok">✔ Posted. Clients can see it now.</span>'; })
+    const n = Date.now(); db.collection("messages").add({text:t, textMr:$("mtextmr").value.trim(), createdAt:n, updatedAt:n})
+      .then(() => { $("mtext").value = ""; $("mtextmr").value = ""; $("msg").innerHTML = '<span class="ok">✔ Posted. Clients can see it now.</span>'; })
       .catch(() => $("msg").innerHTML = '<span class="err">Could not post. Check you are logged in and the database rules are updated.</span>'); });
   on("save", () => { const o = {}; document.querySelectorAll("[data-k]").forEach(t => o[t.dataset.k] = t.value.trim());
     cfg.doc("content").set(o, {merge:true}).then(() => $("msg").innerHTML = '<span class="ok">✔ Saved. Clients now see the changes.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
-  on("svsave", () => { const items = svcDraft.map(s => ({name:s.name.trim() || "Service", sub:(s.sub || "").trim(), onDemand:isOD(s), fare:String(s.fare || "0"),
-      groups:(s.groups || []).map(gr => ({label:gr.label.trim(), times:gr.times.map(t => t.trim()).filter(Boolean)}))}));
+  on("svsave", () => { const items = svcDraft.map(s => ({name:s.name.trim() || "Service", sub:(s.sub || "").trim(), name_mr:(s.name_mr ?? MR[s.name] ?? "").trim(), sub_mr:(s.sub_mr ?? MR[s.sub] ?? "").trim(), onDemand:isOD(s), fare:String(s.fare || "0"),
+      groups:(s.groups || []).map(gr => ({label:gr.label.trim(), label_mr:(gr.label_mr ?? MR[gr.label] ?? "").trim(), times:gr.times.map(t => t.trim()).filter(Boolean)}))}));
     cfg.doc("services").set({items}).then(() => $("msg").innerHTML = '<span class="ok">✔ Services saved. Clients now see the new timings.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
   const f = $("f"); if (f) f.onchange = async () => { $("msg").textContent = "Uploading..."; for (const file of f.files) await addPhoto(file); $("msg").textContent = "Done."; f.value = ""; };
   const en = $("locEn"); if (en) { en.onchange = () => cfg.doc("location").set({enabled:en.checked}, {merge:true}); locStatus(); }
@@ -366,8 +448,8 @@ async function startTrack(){
   const on = p => { if (!p) return; const n = Date.now(); if (n - lastSend < 15000) return; lastSend = n; sendLoc(p.coords.latitude, p.coords.longitude); };
   try { const c = cap();
     if (c) { await c.requestPermissions(); watch = {c, id: await c.watchPosition({enableHighAccuracy:true}, (p) => on(p))}; }
-    else if (navigator.geolocation) watch = {id: navigator.geolocation.watchPosition(on, () => alert("Could not read GPS. Allow location permission."), {enableHighAccuracy:true, maximumAge:10000})};
-  } catch (e) { alert("Location permission is needed."); }
+    else if (navigator.geolocation) watch = {id: navigator.geolocation.watchPosition(on, () => alert(T("Could not read GPS. Allow location permission.")), {enableHighAccuracy:true, maximumAge:10000})};
+  } catch (e) { alert(T("Location permission is needed.")); }
 }
 function stopTrack(){ if (!watch) return; try { watch.c ? watch.c.clearWatch({id:watch.id}) : navigator.geolocation.clearWatch(watch.id); } catch (e) {} watch = null; }
 
@@ -381,6 +463,10 @@ function addPhoto(file){ return new Promise(res => {
     URL.revokeObjectURL(img.src); done({data:c.toDataURL("image/jpeg", .72).split(",")[1], mime:"image/jpeg"}); };
   img.onerror = res; img.src = URL.createObjectURL(file); }); }
 
+$("hdr").addEventListener("click", e => { const b = e.target.closest("[data-lang]"); if (b) setLang(b.dataset.lang); });
+new MutationObserver(ms => { if (lang !== "mr") return; ms.forEach(m => { if (m.type === "characterData") trNode(m.target); m.addedNodes.forEach(trNode); }); })
+  .observe(document.body, {childList:true, subtree:true, characterData:true});
+document.documentElement.lang = lang === "mr" ? "mr" : "en";
 render();
 if ("serviceWorker" in navigator && !window.Capacitor && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
