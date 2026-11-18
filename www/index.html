@@ -112,6 +112,8 @@ const MR = {
  "Uran (Mora) To Mumbai (Colaba)":"उरण (मोरा) ते मुंबई (कुलाबा)","Uran (Mora) To Khanderi (Kanhoji Angre Island)":"उरण (मोरा) ते खांदेरी (कान्होजी आंग्रे बेट)",
  "From Mora":"मोऱ्यावरून","From Colaba":"कुलाब्यावरून","From Khanderi":"खांदेरीवरून","New direction":"नवीन दिशा","New service":"नवीन सेवा",
  "App heading / name":"अ‍ॅपचे शीर्षक / नाव","Home tagline":"मुख्यपृष्ठ घोषवाक्य","About text":"आमच्याबद्दल मजकूर","Services heading":"सेवा शीर्षक","Phone number":"फोन नंबर","Cell Number 1":"मोबाईल नंबर १","Cell Number 2":"मोबाईल नंबर २","Cell Number 1 → Boat":"मोबाईल नंबर १ → बोट","Cell Number 2 → Boat":"मोबाईल नंबर २ → बोट",
+ "Saving and translating…":"जतन व भाषांतर होत आहे…","Type in English or Marathi - the other language is translated automatically.":"इंग्रजी किंवा मराठीत टाइप करा - दुसऱ्या भाषेत आपोआप भाषांतर होईल.",
+ "You can type in English or Marathi.":"तुम्ही इंग्रजी किंवा मराठीत टाइप करू शकता.","Mora Jetty, Uran":"मोरा जेटी, उरण",
  "Boat 1":"बोट १","Boat 2":"बोट २","Cell numbers":"मोबाईल नंबर","This phone (automatic GPS)":"हा फोन (आपोआप GPS)","This phone is":"हा फोन आहे",
  "WhatsApp number (country code, no +)":"व्हॉट्सअ‍ॅप नंबर (देश कोडसह, + शिवाय)","Enquiry page title":"चौकशी पानाचे शीर्षक","Enquiry page note":"चौकशी पानावरील सूचना",
  "Gallery page title":"गॅलरी पानाचे शीर्षक","Messages page title":"संदेश पानाचे शीर्षक","Location page title":"स्थान पानाचे शीर्षक",
@@ -174,6 +176,43 @@ function trNode(n){
   while ((t = w.nextNode())) { if (skip(t.parentElement)) continue; const v = trText(t.nodeValue); if (v !== t.nodeValue) t.nodeValue = v; }
   [n, ...n.querySelectorAll("[placeholder]")].forEach(e => { const p = e.getAttribute("placeholder"); if (p && MR[p]) e.setAttribute("placeholder", MR[p]); });
 }
+// ---------- automatic translation (free MyMemory service; dictionary first) ----------
+const hasDev = t => /[\u0900-\u097F]/.test(t || "");
+const hasLetters = t => /[A-Za-z\u0900-\u097F]/.test(t || "");
+const REV = Object.fromEntries(Object.entries(MR).map(([k, v]) => [v, k]));
+const byteLen = x => new TextEncoder().encode(x).length;
+function chunkText(t){
+  const parts = t.match(/[^.!?।\n]+[.!?।\n]*/g) || [t], out = []; let cur = "";
+  for (const p of parts) {
+    if (byteLen(p) > 400) { if (cur) { out.push(cur); cur = ""; } let w = ""; for (const word of p.split(" ")) { if (w && byteLen(w + " " + word) > 400) { out.push(w); w = word; } else w = w ? w + " " + word : word; } cur = w; continue; }
+    if (cur && byteLen(cur + p) > 400) { out.push(cur); cur = ""; } cur += p; }
+  if (cur) out.push(cur); return out;
+}
+async function tr1(text, from, to){
+  const c = new AbortController(), tm = setTimeout(() => c.abort(), 7000);
+  try { const em = window.TRANSLATE_EMAIL ? "&de=" + encodeURIComponent(window.TRANSLATE_EMAIL) : "";
+    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}${em}`, {signal:c.signal});
+    const j = await r.json(), t = j && j.responseData && j.responseData.translatedText;
+    if (!t || Number(j.responseStatus) !== 200 || /MYMEMORY WARNING|INVALID|QUERY LENGTH|NO QUERY/i.test(t)) return null; return t; }
+  catch (e) { return null; } finally { clearTimeout(tm); }
+}
+async function translate(text, from, to){      // returns the translation, or null when it could not be done
+  const t = (text || "").trim(); if (!t) return "";
+  if (from === "en" && MR[t]) return MR[t]; if (from === "mr" && REV[t]) return REV[t];
+  if (!hasLetters(t)) return t;
+  const out = []; for (const p of chunkText(t)) { if (!hasLetters(p)) { out.push(p.trim()); continue; } const x = await tr1(p.trim(), from, to); if (x === null) return null; out.push(x); }
+  return out.join(" ");
+}
+async function bilingual(value){               // the language typed is detected from the letters; the other side is translated
+  const v = (value || "").trim(); if (!v) return {en:"", mr:""};
+  const src = hasDev(v) ? "mr" : "en", o = await translate(v, src, src === "mr" ? "en" : "mr"), other = o === null ? v : o;
+  return src === "en" ? {en:v, mr:other} : {en:other, mr:v};
+}
+async function addAlts(id, f){                 // client's own free text, translated for the admin / other language
+  const u = {};
+  await Promise.all(Object.entries(f).map(async ([k, v]) => { if (!v) return; const src = hasDev(v) ? "mr" : "en", t = await translate(v, src, src === "mr" ? "en" : "mr"); if (t) u[k + "_alt"] = t; }));
+  if (Object.keys(u).length) db.collection("enquiries").doc(id).update(u).catch(() => {});
+}
 function setLang(l){ lang = l; try { localStorage.setItem("shreeram_lang", l); } catch (e) {} document.documentElement.lang = l === "mr" ? "mr" : "en"; render(); }
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -196,13 +235,17 @@ const ago = ts => { if (!ts) return "unknown"; const m = Math.round((Date.now() 
 // ---------- enquiry / booking helpers ----------
 const today = () => new Date().toLocaleDateString("en-CA");
 const isDone = r => r.status === "confirmed" && r.date && r.date < today();   // date passed = Trip Completed
-const fmtDate = d => d ? d.split("-").reverse().join("/") : "";
-const t12 = t => { if (!t) return ""; const [h, m] = t.split(":"), H = +h; return `${((H + 11) % 12) + 1}:${m} ${H >= 12 ? "PM" : "AM"}`; };
+const dnum = x => lang === "mr" ? String(x).replace(/\d/g, d => "०१२३४५६७८९"[d]) : String(x);
+const fmtDate0 = d => d ? d.split("-").reverse().join("/") : "";
+const fmtDate = d => dnum(fmtDate0(d));
+const t12 = t => { if (!t) return ""; if (lang !== "mr") return t120(t); const [h, m] = t.split(":"), H = +h, p = H < 12 ? "सकाळी" : H < 17 ? "दुपारी" : H < 20 ? "संध्याकाळी" : "रात्री"; return `${p} ${dnum(((H + 11) % 12) + 1)}:${dnum(m)}`; };
+const t120 = t => { if (!t) return ""; const [h, m] = t.split(":"), H = +h; return `${((H + 11) % 12) + 1}:${m} ${H >= 12 ? "PM" : "AM"}`; };
 const isOD = s => s.onDemand === undefined ? /on[\s-]*demand/i.test(s.name || "") : !!s.onDemand;
 const odServices = () => S.filter(isOD);
 const newId = () => Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
 const statusPill = r => isDone(r) ? '<span class="pill ok">Trip Completed</span>' : r.status === "confirmed" ? '<span class="pill blue">Paid &amp; Confirmed</span>' : '<span class="pill">Enquiry – awaiting confirmation</span>';
-const recHtml = r => `<p><b>${esc(r.name)}</b> · ${esc(r.phone)}</p><p>${esc(svcName(r.service))}\n${esc(r.from)} → ${esc(r.to)}</p><p>📅 ${esc(fmtDate(r.date))} · 🕒 ${esc(t12(r.time))} · 👥 ${esc(r.pax)}</p>${r.notes ? `<p>Notes: ${esc(r.notes)}</p>` : ""}`;
+const sd = (r, k) => { const v = r[k] || ""; if (!v) return ""; return (hasDev(v) ? "mr" : "en") === lang ? v : (r[k + "_alt"] || v); };
+const recHtml = r => `<p><b>${esc(r.name)}</b> · ${esc(r.phone)}</p><p>${esc(svcName(r.service))}\n${esc(sd(r, "from"))} → ${esc(sd(r, "to"))}</p><p>📅 ${esc(fmtDate(r.date))} · 🕒 ${esc(t12(r.time))} · 👥 ${esc(dnum(r.pax))}</p>${r.notes ? `<p>Notes: ${esc(sd(r, "notes"))}</p>` : ""}`;
 // the client's own enquiries are remembered on the client's device (by their private IDs)
 const MK = "shreeram_my_v1";
 const myIds = () => { try { return JSON.parse(localStorage.getItem(MK) || "[]"); } catch (e) { return []; } };
@@ -290,9 +333,9 @@ function enquiry(){
   const od = odServices();
   return `<h2>${esc(g("enq_title"))}</h2><p>${esc(g("enq_note"))}</p>` + (od.length ? `<div class="card"><label>Full name</label><input id="n"><label>Phone</label><input id="p" type="tel" inputmode="tel">
    <label>Service</label><select id="sv">${od.map((s, i) => `<option value="${i}">${esc(tx(s.name, s.name_mr))}${s.sub ? " - " + esc(tx(s.sub, s.sub_mr)) : ""}</option>`).join("")}</select>
-   <label>From (pick-up)</label><input id="fr" value="Mora Jetty, Uran"><label>To (destination)</label><input id="to">
+   <label>From (pick-up)</label><input id="fr" value="${esc(T("Mora Jetty, Uran"))}"><label>To (destination)</label><input id="to">
    <label>Travel date</label><input id="d" type="date"><label>Preferred time</label><input id="tm" type="time">
-   <label>Passengers</label><input id="x" type="number" min="1" value="1"><label>Notes (optional)</label><textarea id="o" rows="2"></textarea>
+   <label>Passengers</label><input id="x" type="number" min="1" value="1"><label>Notes (optional)</label><textarea id="o" rows="2"></textarea><small>You can type in English or Marathi.</small>
    <div id="msg"></div><button class="full" id="go">Send Enquiry</button></div>` : `<div class="card"><p>On Demand Service is not available right now.</p></div>`)
    + `<h2 style="margin-top:22px">My Booking</h2><div id="mine">${mineHtml()}</div>`;
 }
@@ -304,9 +347,10 @@ function initEnquiry(){
     const n = v("n"), p = v("p"), fr = v("fr"), to = v("to"), d = $("d").value, tm = $("tm").value, x = parseInt($("x").value) || 0;
     if (!n || !p || !fr || !to || !d || !tm || x < 1) { $("msg").innerHTML = '<span class="err">Please fill all fields (notes are optional).</span>'; return; }
     const svc = od[+$("sv").value].name, notes = v("o");
-    const text = `ON DEMAND ENQUIRY\nName: ${n}\nPhone: ${p}\nService: ${svc}\nFrom: ${fr}\nTo: ${to}\nDate: ${fmtDate(d)}\nTime: ${t12(tm)}\nPassengers: ${x}\nNotes: ${notes}`;
+    const text = `ON DEMAND ENQUIRY\nName: ${n}\nPhone: ${p}\nService: ${svc}\nFrom: ${fr}\nTo: ${to}\nDate: ${fmtDate0(d)}\nTime: ${t120(tm)}\nPassengers: ${x}\nNotes: ${notes}`;
     const id = newId();
     db.collection("enquiries").doc(id).set({name:n, phone:p, service:svc, from:fr, to, date:d, time:tm, pax:x, notes, status:"enquiry", createdAt:Date.now(), text})
+      .then(() => addAlts(id, {from:fr, to, notes}))
       .catch(() => { const m = $("msg"); if (m) m.innerHTML = '<span class="err">Could not send. Check your internet and try again.</span>'; });
     saveIds([id, ...myIds()]); watchMine(id); wa(text);
     $("msg").innerHTML = '<span class="ok">✔ Enquiry sent. See it under My Booking below.</span>';
@@ -342,10 +386,9 @@ function admin(){
    <div id="msg"></div><button class="full" id="go">Login</button></div>`;
   const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["msg","Messages"],["loc","Location"],["enq","Enquiry (" + enquiries.filter(r => r.status !== "confirmed").length + ")"],["book","Bookings (" + enquiries.filter(r => r.status === "confirmed").length + ")"],["acc","Account"]];
   let body = "";
-  if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p>` + Object.keys(F).map(k => {
-      const rows = ["about","tagline","enq_note"].includes(k) ? 3 : 1, one = ["phone","phone2","whatsapp"].includes(k);
-      return `<label>${esc(F[k][0])}${one ? "" : "<span> – English</span>"}</label><textarea data-k="${k}" rows="${rows}">${esc(gEn(k))}</textarea>`
-        + (one ? "" : `<label>${esc(F[k][0])}<span> – Marathi</span></label><textarea data-k="${k}_mr" rows="${rows}">${esc(C[k + "_mr"] || MR[gEn(k)] || "")}</textarea>`); }).join("")
+  if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p><small>Type in English or Marathi - the other language is translated automatically.</small>` + Object.keys(F).map(k => {
+      const rows = ["about","tagline","enq_note"].includes(k) ? 3 : 1, val = ["phone","phone2","whatsapp"].includes(k) ? gEn(k) : (lang === "mr" ? g(k) : gEn(k));
+      return `<label>${esc(F[k][0])}</label><textarea data-k="${k}" rows="${rows}">${esc(val)}</textarea>`; }).join("")
       + `<div id="msg"></div><button class="full" id="save">Save changes</button></div>`;
   else if (adminTab === "svc") { if (!svcDraft) svcDraft = JSON.parse(JSON.stringify(S)); body = svcEditor(); }
   else if (adminTab === "gal") { const hid = (pics.find(x => x.id === C.home_img_id) || pics[0] || {}).id;
@@ -353,7 +396,7 @@ function admin(){
       <small>The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.</small></div>
       <div class="grid">${pics.map(p => `<div class="card" style="padding:8px;margin:0"><img alt="" src="${src(p)}">${p.id === hid ? '<span class="pill" style="margin-top:8px">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
         <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
-  else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><label>Message in Marathi (optional – clients on MAR see this)</label><textarea id="mtextmr" rows="4"></textarea><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
+  else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><small>Type in English or Marathi - the other language is translated automatically.</small><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
   else if (adminTab === "loc") body = locAdmin();
   else if (adminTab === "enq") { const rows = enquiries.filter(r => r.status !== "confirmed"); body = `<p><b>${rows.length} enquiries (newest first)</b></p>` + rows.map(enqCard).join(""); }
   else if (adminTab === "book") { const rows = enquiries.filter(r => r.status === "confirmed");
@@ -392,21 +435,18 @@ function bookCard(r){
 }
 function msgListAdmin(){
   return `<p><b>${msgs.length} posted (newest first)</b></p>` + msgs.map(m => editingMsg === m.id
-    ? `<div class="card"><textarea id="medit" rows="4">${esc(m.text)}</textarea><label>Message in Marathi (optional – clients on MAR see this)</label><textarea id="meditmr" rows="4">${esc(m.textMr || "")}</textarea><button class="sm" data-act="saveMsg" data-id="${m.id}">Save</button><button class="sm gold" data-act="cancelMsg">Cancel</button></div>`
-    : `<div class="card"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small><p>${esc(m.text)}</p>${m.textMr ? `<p>${esc(m.textMr)}</p>` : ""}<button class="sm" data-act="editMsg" data-id="${m.id}">Edit</button><button class="sm del" data-act="delMsg" data-id="${m.id}">Delete</button></div>`).join("");
+    ? `<div class="card"><textarea id="medit" rows="4">${esc(mt(m))}</textarea><button class="sm" data-act="saveMsg" data-id="${m.id}">Save</button><button class="sm gold" data-act="cancelMsg">Cancel</button></div>`
+    : `<div class="card"><small>🕒 ${esc(fmt(m.createdAt))}${m.updatedAt && m.updatedAt > m.createdAt ? " · edited" : ""}</small><p>${esc(mt(m))}</p><button class="sm" data-act="editMsg" data-id="${m.id}">Edit</button><button class="sm del" data-act="delMsg" data-id="${m.id}">Delete</button></div>`).join("");
 }
 function refreshMsgList(){ const el = $("msglist"); if (el && editingMsg === null) el.innerHTML = msgListAdmin(); }
 
 function svcEditor(){
-  const mrv = (v, en) => esc(v ?? MR[en] ?? "");
-  return `<p><b>Edit services and timings, then tap Save services.</b></p>` + svcDraft.map((s,i) => `<div class="card"><label>Service name</label><input data-f="name" data-i="${i}" value="${esc(s.name)}">
-    <label>Service name (Marathi)</label><input data-f="name_mr" data-i="${i}" value="${mrv(s.name_mr, s.name)}">
-    <label>Route / description (shown under the name)</label><input data-f="sub" data-i="${i}" value="${esc(s.sub)}">
-    <label>Route / description (Marathi)</label><input data-f="sub_mr" data-i="${i}" value="${mrv(s.sub_mr, s.sub)}">
+  const v = (o, k) => esc(lang === "mr" ? (o[k + "_mr"] || MR[o[k]] || o[k] || "") : (o[k] || ""));
+  return `<p><b>Edit services and timings, then tap Save services.</b></p><small>Type in English or Marathi - the other language is translated automatically.</small>` + svcDraft.map((s,i) => `<div class="card"><label>Service name</label><input data-f="name" data-i="${i}" value="${v(s, "name")}">
+    <label>Route / description (shown under the name)</label><input data-f="sub" data-i="${i}" value="${v(s, "sub")}">
     <label class="chk"><input type="checkbox" data-f="od" data-i="${i}" ${isOD(s) ? "checked" : ""}> On Demand Service (clients can send an enquiry for it)</label>
     <label>Fare per person ₹ (0 = hide fare)</label><input data-f="fare" data-i="${i}" type="number" inputmode="numeric" value="${esc(s.fare)}">
-    ${(s.groups || []).map((gr,j) => `<div class="grp"><label>Direction heading (e.g. From Mora)</label><input data-f="label" data-i="${i}" data-j="${j}" value="${esc(gr.label)}">
-      <label>Direction heading (Marathi)</label><input data-f="label_mr" data-i="${i}" data-j="${j}" value="${mrv(gr.label_mr, gr.label)}">
+    ${(s.groups || []).map((gr,j) => `<div class="grp"><label>Direction heading (e.g. From Mora)</label><input data-f="label" data-i="${i}" data-j="${j}" value="${v(gr, "label")}">
       <label>Timings</label><div class="trow">${(gr.times || []).map((t,k) => `<span class="tin"><input data-f="time" data-i="${i}" data-j="${j}" data-k="${k}" value="${esc(t)}" placeholder="07:00 AM"><button data-act="delTime" data-i="${i}" data-j="${j}" data-k="${k}">✕</button></span>`).join("")}</div>
       <button class="sm" data-act="addTime" data-i="${i}" data-j="${j}">+ Add timing</button><button class="sm del" data-act="delGroup" data-i="${i}" data-j="${j}">Remove direction</button></div>`).join("")}
     <button class="sm" data-act="addGroup" data-i="${i}">+ Add direction</button><button class="sm del" data-act="delSvc" data-i="${i}">Delete service</button></div>`).join("")
@@ -415,7 +455,9 @@ function svcEditor(){
 $("app").addEventListener("input", e => {
   const t = e.target, f = t.dataset.f; if (!f || !svcDraft) return;
   const s = svcDraft[+t.dataset.i], j = +t.dataset.j, k = +t.dataset.k;
-  if (f === "name") s.name = t.value; else if (f === "name_mr") s.name_mr = t.value; else if (f === "sub_mr") s.sub_mr = t.value; else if (f === "label_mr") s.groups[j].label_mr = t.value; else if (f === "sub") s.sub = t.value; else if (f === "fare") s.fare = t.value; else if (f === "label") s.groups[j].label = t.value; else if (f === "time") s.groups[j].times[k] = t.value;
+  const setSide = (o, key, val) => { o[lang === "mr" ? key + "_mr" : key] = val; (o._d = o._d || {})[key] = val; };
+  if (f === "name") setSide(s, "name", t.value); else if (f === "sub") setSide(s, "sub", t.value); else if (f === "fare") s.fare = t.value;
+  else if (f === "label") setSide(s.groups[j], "label", t.value); else if (f === "time") s.groups[j].times[k] = t.value;
 });
 $("app").addEventListener("change", e => { const t = e.target; if (t.dataset.f === "od" && svcDraft) svcDraft[+t.dataset.i].onDemand = t.checked; });
 $("app").addEventListener("click", e => {
@@ -435,7 +477,11 @@ $("app").addEventListener("click", e => {
   if (a === "myCancel") { if (confirm(T("Cancel this booking? It will be removed everywhere."))) db.collection("enquiries").doc(id).delete().catch(() => alert(T("Could not cancel. Please call us."))); return; }
   if (a === "editMsg") { editingMsg = id; $("msglist").innerHTML = msgListAdmin(); return; }
   if (a === "cancelMsg") { editingMsg = null; refreshMsgList(); return; }
-  if (a === "saveMsg") { const t = $("medit").value.trim(); if (!t) return; db.collection("messages").doc(id).update({text:t, textMr:($("meditmr").value || "").trim(), updatedAt:Date.now()}); editingMsg = null; refreshMsgList(); return; }
+  if (a === "saveMsg") { const ta = $("medit"), t = ta.value.trim(); if (!t) return;
+    if (t === ta.defaultValue) { editingMsg = null; refreshMsgList(); return; }
+    ta.disabled = true;
+    bilingual(t).then(b => db.collection("messages").doc(id).update({text:b.en, textMr:b.mr, updatedAt:Date.now()})).then(() => { editingMsg = null; refreshMsgList(); }).catch(() => { ta.disabled = false; alert(T("Could not save.")); });
+    return; }
   if (a === "delMsg") { if (confirm(T("Delete this message for all clients?"))) db.collection("messages").doc(id).delete(); return; }
   if (!svcDraft) return;
   if (a === "addSvc") svcDraft.push({name:"New service", sub:"", onDemand:false, fare:"0", groups:[{label:"From Mora", times:[""]}]});
@@ -454,15 +500,27 @@ function initAdmin(){
   on("go", () => { $("go").disabled = true; auth.signInWithEmailAndPassword($("ae").value.trim(), $("ap").value)
     .catch(() => { $("go").disabled = false; $("msg").innerHTML = '<span class="err">Login failed. Check email, password and internet.</span>'; }); });
   on("out", () => auth.signOut());
-  on("mpost", () => { const t = $("mtext").value.trim(); if (!t) { $("msg").innerHTML = '<span class="err">Type a message first.</span>'; return; }
-    const n = Date.now(); db.collection("messages").add({text:t, textMr:$("mtextmr").value.trim(), createdAt:n, updatedAt:n})
-      .then(() => { $("mtext").value = ""; $("mtextmr").value = ""; $("msg").innerHTML = '<span class="ok">✔ Posted. Clients can see it now.</span>'; })
-      .catch(() => $("msg").innerHTML = '<span class="err">Could not post. Check you are logged in and the database rules are updated.</span>'); });
-  on("save", () => { const o = {}; document.querySelectorAll("[data-k]").forEach(t => o[t.dataset.k] = t.value.trim());
-    cfg.doc("content").set(o, {merge:true}).then(() => $("msg").innerHTML = '<span class="ok">✔ Saved. Clients now see the changes.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
-  on("svsave", () => { const items = svcDraft.map(s => ({name:s.name.trim() || "Service", sub:(s.sub || "").trim(), name_mr:(s.name_mr ?? MR[s.name] ?? "").trim(), sub_mr:(s.sub_mr ?? MR[s.sub] ?? "").trim(), onDemand:isOD(s), fare:String(s.fare || "0"),
-      groups:(s.groups || []).map(gr => ({label:gr.label.trim(), label_mr:(gr.label_mr ?? MR[gr.label] ?? "").trim(), times:gr.times.map(t => t.trim()).filter(Boolean)}))}));
-    cfg.doc("services").set({items}).then(() => $("msg").innerHTML = '<span class="ok">✔ Services saved. Clients now see the new timings.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
+  on("mpost", async () => { const t = $("mtext").value.trim(); if (!t) { $("msg").innerHTML = '<span class="err">Type a message first.</span>'; return; }
+    $("msg").textContent = T("Saving and translating…");
+    try { const b = await bilingual(t), n = Date.now(); await db.collection("messages").add({text:b.en, textMr:b.mr, createdAt:n, updatedAt:n});
+      $("mtext").value = ""; $("msg").innerHTML = '<span class="ok">✔ Posted. Clients can see it now.</span>'; }
+    catch (e) { $("msg").innerHTML = '<span class="err">Could not post. Check you are logged in and the database rules are updated.</span>'; } });
+  on("save", async () => { const msg = $("msg"); msg.textContent = T("Saving and translating…");
+    const o = {}, jobs = [], changed = [];
+    document.querySelectorAll("[data-k]").forEach(t => { const k = t.dataset.k, v = t.value.trim();
+      if (["phone","phone2","whatsapp"].includes(k)) { o[k] = v; return; }
+      if (t.value === t.defaultValue) return;
+      changed.push(t); jobs.push(bilingual(v).then(b => { o[k] = b.en; o[k + "_mr"] = b.mr; })); });
+    try { await Promise.all(jobs); await cfg.doc("content").set(o, {merge:true}); changed.forEach(t => t.defaultValue = t.value); msg.innerHTML = '<span class="ok">✔ Saved. Clients now see the changes.</span>'; }
+    catch (e) { msg.innerHTML = '<span class="err">Could not save.</span>'; } });
+  on("svsave", async () => { $("msg").textContent = T("Saving and translating…");
+    const bi = async (o, k) => (o._d && o._d[k] !== undefined) ? bilingual(o._d[k]) : {en:o[k] || "", mr:o[k + "_mr"] || MR[o[k]] || ""};
+    try { const items = await Promise.all(svcDraft.map(async s => { const [n, sb] = await Promise.all([bi(s, "name"), bi(s, "sub")]);
+        const groups = await Promise.all((s.groups || []).map(async gr => { const l = await bi(gr, "label"); return {label:l.en.trim(), label_mr:l.mr.trim(), times:gr.times.map(t => t.trim()).filter(Boolean)}; }));
+        return {name:n.en.trim() || "Service", name_mr:n.mr.trim(), sub:sb.en.trim(), sub_mr:sb.mr.trim(), onDemand:isOD(s), fare:String(s.fare || "0"), groups}; }));
+      await cfg.doc("services").set({items}); svcDraft = JSON.parse(JSON.stringify(items)); render();
+      $("msg").innerHTML = '<span class="ok">✔ Services saved. Clients now see the new timings.</span>'; }
+    catch (e) { $("msg").innerHTML = '<span class="err">Could not save.</span>'; } });
   const f = $("f"); if (f) f.onchange = async () => { $("msg").textContent = "Uploading..."; for (const file of f.files) await addPhoto(file); $("msg").textContent = "Done."; f.value = ""; };
   [1, 2].forEach(n => { const e = $("en" + n); if (e) e.onchange = () => cfg.doc("location").set({["b" + n + "_enabled"]: e.checked}, {merge:true}); });
   const c1 = $("c1b"), c2 = $("c2b");
