@@ -48,6 +48,7 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
 nav a{position:relative}
+.seg{display:flex;gap:8px;margin-bottom:12px}.seg button{flex:1;background:var(--card);color:var(--tx);border:1.5px solid var(--ln);box-shadow:none}.seg button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
 .lang{margin-left:auto;display:flex;border:1.5px solid rgba(255,255,255,.75);border-radius:8px;overflow:hidden;flex:none}
 .lang button{background:transparent;color:#fff;border:0;border-radius:0;padding:6px 11px;min-height:34px;font-size:13px;font-weight:700;box-shadow:none}.lang button.on{background:#f2a900;color:#0a3d62}
 .hn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -78,7 +79,8 @@ const F = {
   tagline:["Home tagline","Safe & comfortable passenger launch service from Uran (Mora)"],
   about:["About text","Shree Ram Launch Service runs passenger launches from Mora Jetty, Uran to Mumbai (Colaba) and Khanderi (Kanhoji Angre Island), with life jackets and experienced crew."],
   services_title:["Services heading","Services"],
-  phone:["Phone number","+910000000000"],
+  phone:["Cell Number 1","+910000000000"],
+  phone2:["Cell Number 2",""],
   whatsapp:["WhatsApp number (country code, no +)","910000000000"],
   enq_title:["Enquiry page title","On Demand Enquiry"],
   enq_note:["Enquiry page note","Send an enquiry for our On Demand Service. We will confirm your trip once payment is received."],
@@ -109,7 +111,8 @@ const MR = {
  "Regular Daily Service":"नियमित दैनिक सेवा","On Demand Service":"मागणीनुसार सेवा",
  "Uran (Mora) To Mumbai (Colaba)":"उरण (मोरा) ते मुंबई (कुलाबा)","Uran (Mora) To Khanderi (Kanhoji Angre Island)":"उरण (मोरा) ते खांदेरी (कान्होजी आंग्रे बेट)",
  "From Mora":"मोऱ्यावरून","From Colaba":"कुलाब्यावरून","From Khanderi":"खांदेरीवरून","New direction":"नवीन दिशा","New service":"नवीन सेवा",
- "App heading / name":"अ‍ॅपचे शीर्षक / नाव","Home tagline":"मुख्यपृष्ठ घोषवाक्य","About text":"आमच्याबद्दल मजकूर","Services heading":"सेवा शीर्षक","Phone number":"फोन नंबर",
+ "App heading / name":"अ‍ॅपचे शीर्षक / नाव","Home tagline":"मुख्यपृष्ठ घोषवाक्य","About text":"आमच्याबद्दल मजकूर","Services heading":"सेवा शीर्षक","Phone number":"फोन नंबर","Cell Number 1":"मोबाईल नंबर १","Cell Number 2":"मोबाईल नंबर २","Cell Number 1 → Boat":"मोबाईल नंबर १ → बोट","Cell Number 2 → Boat":"मोबाईल नंबर २ → बोट",
+ "Boat 1":"बोट १","Boat 2":"बोट २","Cell numbers":"मोबाईल नंबर","This phone (automatic GPS)":"हा फोन (आपोआप GPS)","This phone is":"हा फोन आहे",
  "WhatsApp number (country code, no +)":"व्हॉट्सअ‍ॅप नंबर (देश कोडसह, + शिवाय)","Enquiry page title":"चौकशी पानाचे शीर्षक","Enquiry page note":"चौकशी पानावरील सूचना",
  "Gallery page title":"गॅलरी पानाचे शीर्षक","Messages page title":"संदेश पानाचे शीर्षक","Location page title":"स्थान पानाचे शीर्षक",
  "– English":"– इंग्रजी","– Marathi":"– मराठी",
@@ -177,7 +180,17 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const page = () => { const h = (location.hash || "#home").slice(1); return h === "book" ? "enquiry" : h; };
 const src = p => `data:${p.mime || "image/jpeg"};base64,${p.data}`;
 const wa = t => window.open("https://wa.me/" + gEn("whatsapp") + "?text=" + encodeURIComponent(t), "_blank");
-const locKey = () => [L.enabled, L.lat, L.lng].join();
+let selBoat = 1;
+const boatLoc = n => { const p = "b" + n + "_", o = {enabled:L[p + "enabled"], lat:L[p + "lat"], lng:L[p + "lng"], updatedAt:L[p + "updatedAt"]};
+  if (n === 1 && o.enabled === undefined && o.lat === undefined && L.lat !== undefined) Object.assign(o, {enabled:L.enabled, lat:L.lat, lng:L.lng, updatedAt:L.updatedAt});   // data saved by the earlier version
+  return o; };
+const boatCells = n => [["phone", L.cell1Boat || 1], ["phone2", L.cell2Boat || 2]].filter(([k, b]) => b === n && gEn(k)).map(([k]) => gEn(k));
+const callBtns = n => boatCells(n).map(c => `<a class="btn alt full" href="tel:${esc(c)}">📞 Call ${esc(c)}</a>`).join("");
+const locKey = () => { const b = boatLoc(selBoat); return [selBoat, b.enabled, b.lat, b.lng, L.cell1Boat, L.cell2Boat, gEn("phone"), gEn("phone2")].join(); };
+const getMe = () => { try { return localStorage.getItem("shreeram_me") || "1"; } catch (e) { return "1"; } };
+const setMe = v => { try { localStorage.setItem("shreeram_me", v); } catch (e) {} };
+const thisBoat = () => getMe() === "1" ? (L.cell1Boat || 1) : (L.cell2Boat || 2);
+const boatOpts = v => [1, 2].map(i => `<option value="${i}" ${v === i ? "selected" : ""}>Boat ${i}</option>`).join("");
 const ago = ts => { if (!ts) return "unknown"; const m = Math.round((Date.now() - ts) / 60000); return m < 1 ? T("just now") : m < 60 ? (lang === "mr" ? m + " मिनिटांपूर्वी" : m + " min ago") : new Date(ts).toLocaleString(lang === "mr" ? "mr-IN" : []); };
 
 // ---------- enquiry / booking helpers ----------
@@ -270,7 +283,7 @@ function home(){ return `
  <div class="svcs">${S.map((s,i) => `<div class="card"><div class="svc-h"><h3><span class="num">${i+1}</span>${esc(tx(s.name, s.name_mr))}</h3>${isOD(s) ? '<span class="pill">On Demand</span>' : ""}${parseFloat(s.fare) ? `<span class="fare">₹${esc(s.fare)}</span>` : ""}</div>
    ${s.sub ? `<p style="margin:0 0 6px;color:var(--mut)">${esc(tx(s.sub, s.sub_mr))}</p>` : ""}${isOD(s) && !(s.groups || []).some(gr => (gr.times || []).some(Boolean)) ? "<p><small>Available on request - please send an enquiry.</small></p>" : ""}${(s.groups || []).map(gr => `<div class="grp"><b>${esc(tx(gr.label, gr.label_mr))}</b><div class="chips">${(gr.times || []).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></div>`).join("")}</div>`).join("")}</div>
  <a class="btn full" href="#enquiry">Send Enquiry</a>
- <a class="btn alt full" href="tel:${esc(gEn("phone"))}">📞 Call ${esc(gEn("phone"))}</a>`; }
+ ${[gEn("phone"), gEn("phone2")].filter(Boolean).map(c => `<a class="btn alt full" href="tel:${esc(c)}">📞 Call ${esc(c)}</a>`).join("")}`; }
 
 // ---------- ENQUIRY (On Demand Service) + MY BOOKING ----------
 function enquiry(){
@@ -315,11 +328,12 @@ function messages(){
 
 // ---------- LIVE LOCATION ----------
 function locate(){
-  shownLoc = locKey(); const h = `<h2>${esc(g("loc_title"))}</h2>`;
-  if (!L.enabled) return h + `<div class="card"><p>📍 The launch location is not being shared right now.</p></div>`;
-  if (typeof L.lat !== "number" || typeof L.lng !== "number") return h + `<div class="card"><p>📍 Waiting for the first location update…</p></div>`;
-  return h + `<div class="card map"><iframe title="Launch location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${L.lat},${L.lng}&z=15&output=embed"></iframe></div>
-   <p><small>Last updated: ${esc(ago(L.updatedAt))}</small></p><a class="btn alt full" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${L.lat},${L.lng}">Open in Google Maps</a>`;
+  shownLoc = locKey(); const n = selBoat, b = boatLoc(n);
+  const h = `<h2>${esc(g("loc_title"))}</h2><div class="seg">${[1, 2].map(i => `<button data-boat="${i}" class="${n === i ? "on" : ""}">Boat ${i}</button>`).join("")}</div>`;
+  if (!b.enabled) return h + `<div class="card"><p>📍 The launch location is not being shared right now.</p></div>` + callBtns(n);
+  if (typeof b.lat !== "number" || typeof b.lng !== "number") return h + `<div class="card"><p>📍 Waiting for the first location update…</p></div>` + callBtns(n);
+  return h + `<div class="card map"><iframe title="Launch location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${b.lat},${b.lng}&z=15&output=embed"></iframe></div>
+   <p><small>Last updated: ${esc(ago(b.updatedAt))}</small></p><a class="btn alt full" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${b.lat},${b.lng}">Open in Google Maps</a>` + callBtns(n);
 }
 
 // ---------- ADMIN ----------
@@ -329,7 +343,7 @@ function admin(){
   const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["msg","Messages"],["loc","Location"],["enq","Enquiry (" + enquiries.filter(r => r.status !== "confirmed").length + ")"],["book","Bookings (" + enquiries.filter(r => r.status === "confirmed").length + ")"],["acc","Account"]];
   let body = "";
   if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p>` + Object.keys(F).map(k => {
-      const rows = ["about","tagline","enq_note"].includes(k) ? 3 : 1, one = k === "phone" || k === "whatsapp";
+      const rows = ["about","tagline","enq_note"].includes(k) ? 3 : 1, one = ["phone","phone2","whatsapp"].includes(k);
       return `<label>${esc(F[k][0])}${one ? "" : "<span> – English</span>"}</label><textarea data-k="${k}" rows="${rows}">${esc(gEn(k))}</textarea>`
         + (one ? "" : `<label>${esc(F[k][0])}<span> – Marathi</span></label><textarea data-k="${k}_mr" rows="${rows}">${esc(C[k + "_mr"] || MR[gEn(k)] || "")}</textarea>`); }).join("")
       + `<div id="msg"></div><button class="full" id="save">Save changes</button></div>`;
@@ -340,17 +354,34 @@ function admin(){
       <div class="grid">${pics.map(p => `<div class="card" style="padding:8px;margin:0"><img alt="" src="${src(p)}">${p.id === hid ? '<span class="pill" style="margin-top:8px">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
         <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
   else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><label>Message in Marathi (optional – clients on MAR see this)</label><textarea id="mtextmr" rows="4"></textarea><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
-  else if (adminTab === "loc") body = `<div class="card"><label class="chk"><input type="checkbox" id="locEn" ${L.enabled ? "checked" : ""}> Show launch location to clients (Location tab)</label>
-      <label class="chk"><input type="checkbox" id="locAuto" ${watch ? "checked" : ""}> Update location automatically from THIS phone</label>
-      <small>Use this on the phone kept on the launch. Keep the app open and the screen on, and allow location access.</small>
-      <label>Latitude (manual)</label><input id="lat" inputmode="decimal" value="${esc(L.lat)}"><label>Longitude (manual)</label><input id="lng" inputmode="decimal" value="${esc(L.lng)}">
-      <button class="sm" id="locSave">Save position</button><button class="sm gold" id="locNow">Use my current location</button><p id="locstat"></p><div id="msg"></div></div>`;
+  else if (adminTab === "loc") body = locAdmin();
   else if (adminTab === "enq") { const rows = enquiries.filter(r => r.status !== "confirmed"); body = `<p><b>${rows.length} enquiries (newest first)</b></p>` + rows.map(enqCard).join(""); }
   else if (adminTab === "book") { const rows = enquiries.filter(r => r.status === "confirmed");
     const up = rows.filter(r => !isDone(r)).sort((x, y) => (x.date || "").localeCompare(y.date || "")), dn = rows.filter(isDone).sort((x, y) => (y.date || "").localeCompare(x.date || ""));
     body = `<p><b>${up.length} upcoming · ${dn.length} completed</b></p>` + up.map(bookCard).join("") + (dn.length ? `<h3>Trip Completed</h3>` + dn.map(bookCard).join("") : ""); }
   else body = `<div class="card"><p>Logged in as ${esc(user.email)}</p><small>To change the password: Firebase Console → Authentication → Users.</small><br><br><button id="out">Logout</button></div>`;
   return `<div class="tabs">${tabs.map(t => `<button data-t="${t[0]}" class="${adminTab===t[0]?'on':''}">${t[1]}</button>`).join("")}</div>` + body;
+}
+function locAdmin(){
+  return `<div class="card"><h3>Cell numbers</h3><div id="msg"></div>
+    <label>Cell Number 1 → Boat</label><select id="c1b">${boatOpts(L.cell1Boat || 1)}</select><small>${esc(gEn("phone"))}</small>
+    <label>Cell Number 2 → Boat</label><select id="c2b">${boatOpts(L.cell2Boat || 2)}</select><small>${esc(gEn("phone2"))}</small></div>`
+  + [1, 2].map(n => { const b = boatLoc(n); return `<div class="card"><h3>Boat ${n}</h3>
+    <label class="chk"><input type="checkbox" id="en${n}" ${b.enabled ? "checked" : ""}> Show launch location to clients (Location tab)</label>
+    <label>Latitude (manual)</label><input id="lat${n}" inputmode="decimal" value="${esc(b.lat)}"><label>Longitude (manual)</label><input id="lng${n}" inputmode="decimal" value="${esc(b.lng)}">
+    <button class="sm" data-act="locSave" data-i="${n}">Save position</button><button class="sm gold" data-act="locNow" data-i="${n}">Use my current location</button><p id="locstat${n}"></p></div>`; }).join("")
+  + `<div class="card"><h3>This phone (automatic GPS)</h3><label>This phone is</label><select id="meCell"><option value="1">Cell Number 1</option><option value="2">Cell Number 2</option></select>
+    <label class="chk"><input type="checkbox" id="locAuto" ${watch ? "checked" : ""}> Update location automatically from THIS phone</label>
+    <small>Use this on the phone kept on the launch. Keep the app open and the screen on, and allow location access.</small></div>`;
+}
+function saveBoatPos(n){
+  const la = parseFloat($("lat" + n).value), ln = parseFloat($("lng" + n).value);
+  if (isNaN(la) || isNaN(ln)) { $("msg").innerHTML = '<span class="err">Enter valid latitude and longitude.</span>'; return; }
+  sendLoc(n, la, ln); $("msg").innerHTML = '<span class="ok">✔ Saved.</span>';
+}
+async function nowBoatPos(n){
+  try { const p = await getPos(); $("lat" + n).value = p.latitude; $("lng" + n).value = p.longitude; sendLoc(n, p.latitude, p.longitude); $("msg").innerHTML = '<span class="ok">✔ Location updated.</span>'; }
+  catch (e) { $("msg").innerHTML = '<span class="err">Could not read GPS. Allow location permission.</span>'; }
 }
 function enqCard(r){
   if (!r.status) return `<div class="card"><small>${esc(fmt(r.createdAt))} · older enquiry</small><p>${esc(r.text)}</p><button class="sm del" data-act="delRec" data-col="enquiries" data-id="${r.id}">Delete</button></div>`;
@@ -388,6 +419,7 @@ $("app").addEventListener("input", e => {
 });
 $("app").addEventListener("change", e => { const t = e.target; if (t.dataset.f === "od" && svcDraft) svcDraft[+t.dataset.i].onDemand = t.checked; });
 $("app").addEventListener("click", e => {
+  const bb = e.target.closest("[data-boat]"); if (bb) { selBoat = +bb.dataset.boat; render(); return; }
   const lb = e.target.closest("[data-lb]"); if (lb) { $("lb").querySelector("img").src = lb.src; $("lb").style.display = "flex"; return; }
   const tb = e.target.closest("[data-t]"); if (tb) { adminTab = tb.dataset.t; editingMsg = null; if (adminTab !== "svc") svcDraft = null; render(); return; }
   const b = e.target.closest("[data-act]"); if (!b) return;
@@ -395,6 +427,8 @@ $("app").addEventListener("click", e => {
   if (a === "setHome") { cfg.doc("content").set({home_img_id:id}, {merge:true}); return; }
   if (a === "delPic") { if (confirm(T("Delete this photo?"))) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
   if (a === "delRec") { if (confirm(T("Delete this record?"))) db.collection(b.dataset.col).doc(id).delete(); return; }
+  if (a === "locSave") { saveBoatPos(i); return; }
+  if (a === "locNow") { nowBoatPos(i); return; }
   if (a === "confirmEnq") { db.collection("enquiries").doc(id).update({status:"confirmed", confirmedAt:Date.now()}); return; }
   if (a === "cancelEnq") { if (confirm(T("Cancel this enquiry? It will also be removed from the client's My Booking."))) db.collection("enquiries").doc(id).delete(); return; }
   if (a === "revertBook") { if (confirm(T("Cancel this booking and move it back to Enquiry?"))) db.collection("enquiries").doc(id).update({status:"enquiry", confirmedAt:firebase.firestore.FieldValue.delete()}); return; }
@@ -430,22 +464,24 @@ function initAdmin(){
       groups:(s.groups || []).map(gr => ({label:gr.label.trim(), label_mr:(gr.label_mr ?? MR[gr.label] ?? "").trim(), times:gr.times.map(t => t.trim()).filter(Boolean)}))}));
     cfg.doc("services").set({items}).then(() => $("msg").innerHTML = '<span class="ok">✔ Services saved. Clients now see the new timings.</span>').catch(() => $("msg").innerHTML = '<span class="err">Could not save.</span>'); });
   const f = $("f"); if (f) f.onchange = async () => { $("msg").textContent = "Uploading..."; for (const file of f.files) await addPhoto(file); $("msg").textContent = "Done."; f.value = ""; };
-  const en = $("locEn"); if (en) { en.onchange = () => cfg.doc("location").set({enabled:en.checked}, {merge:true}); locStatus(); }
+  [1, 2].forEach(n => { const e = $("en" + n); if (e) e.onchange = () => cfg.doc("location").set({["b" + n + "_enabled"]: e.checked}, {merge:true}); });
+  const c1 = $("c1b"), c2 = $("c2b");
+  if (c1) c1.onchange = () => cfg.doc("location").set({cell1Boat:+c1.value}, {merge:true});
+  if (c2) c2.onchange = () => cfg.doc("location").set({cell2Boat:+c2.value}, {merge:true});
+  const me = $("meCell"); if (me) { me.value = getMe(); me.onchange = () => setMe(me.value); }
   const au = $("locAuto"); if (au) au.onchange = async () => { if (au.checked) { await startTrack(); au.checked = !!watch; } else stopTrack(); };
-  on("locSave", () => { const la = parseFloat($("lat").value), ln = parseFloat($("lng").value);
-    if (isNaN(la) || isNaN(ln)) { $("msg").innerHTML = '<span class="err">Enter valid latitude and longitude.</span>'; return; } sendLoc(la, ln); $("msg").innerHTML = '<span class="ok">✔ Saved.</span>'; });
-  on("locNow", async () => { try { const p = await getPos(); $("lat").value = p.latitude; $("lng").value = p.longitude; sendLoc(p.latitude, p.longitude); $("msg").innerHTML = '<span class="ok">✔ Location updated.</span>'; }
-    catch (e) { $("msg").innerHTML = '<span class="err">Could not read GPS. Allow location permission.</span>'; } });
+  locStatus();
 }
-function locStatus(){ const el = $("locstat"); if (el) el.innerHTML = `<small>Clients see: ${L.enabled ? "<b>location ON</b>" : "<b>location OFF</b>"}${L.updatedAt ? " · last update " + esc(ago(L.updatedAt)) : ""}</small>`; }
+function locStatus(){ [1, 2].forEach(n => { const el = $("locstat" + n), b = boatLoc(n);
+  if (el) el.innerHTML = `<small>Clients see: ${b.enabled ? "<b>location ON</b>" : "<b>location OFF</b>"}${b.updatedAt ? " · last update " + esc(ago(b.updatedAt)) : ""}</small>`; }); }
 
 // ---------- GPS ----------
 const cap = () => window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Geolocation;
-function sendLoc(lat, lng){ cfg.doc("location").set({lat, lng, updatedAt:Date.now()}, {merge:true}); }
+function sendLoc(n, lat, lng){ const p = "b" + n + "_"; cfg.doc("location").set({[p + "lat"]:lat, [p + "lng"]:lng, [p + "updatedAt"]:Date.now()}, {merge:true}); }
 function getPos(){ const c = cap(); if (c) return c.getCurrentPosition({enableHighAccuracy:true}).then(p => p.coords);
   return new Promise((ok, no) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => ok(p.coords), no, {enableHighAccuracy:true}) : no()); }
 async function startTrack(){
-  const on = p => { if (!p) return; const n = Date.now(); if (n - lastSend < 15000) return; lastSend = n; sendLoc(p.coords.latitude, p.coords.longitude); };
+  const on = p => { if (!p) return; const n = Date.now(); if (n - lastSend < 15000) return; lastSend = n; sendLoc(thisBoat(), p.coords.latitude, p.coords.longitude); };
   try { const c = cap();
     if (c) { await c.requestPermissions(); watch = {c, id: await c.watchPosition({enableHighAccuracy:true}, (p) => on(p))}; }
     else if (navigator.geolocation) watch = {id: navigator.geolocation.watchPosition(on, () => alert(T("Could not read GPS. Allow location permission.")), {enableHighAccuracy:true, maximumAge:10000})};
