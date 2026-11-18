@@ -48,6 +48,19 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
 nav a{position:relative}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.thumbs>img,.thumbs .vt,.thumbs.adm img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;border-radius:10px;display:block;cursor:pointer}
+.thumbs.adm{grid-template-columns:repeat(auto-fill,minmax(108px,1fr))}
+.thumbs.adm button.sm{width:100%;font-size:12px;padding:6px 8px;min-height:32px;margin:6px 0 0}.thumbs.adm .pill{margin-top:6px}
+.vt{position:relative;padding:0;border:0;background:#000;overflow:hidden;min-height:0}.vt img{width:100%;height:100%;object-fit:cover;display:block}
+.vt .play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:24px;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.vt .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;border-radius:6px;padding:1px 5px}
+.camb{display:inline-block;background:var(--gold);color:#0a3d62;border-radius:10px;padding:12px 16px;font-weight:600;font-size:15px;margin:10px 0 0;cursor:pointer}
+#lb{flex-direction:column}#lbc{max-width:min(96vw,1000px);display:flex;justify-content:center;align-items:center}
+#lb #lbc img,#lb #lbc video{max-width:100%;max-height:86vh;width:auto;height:auto;border-radius:10px;display:block;background:#000}
+#lbx{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;background:rgba(255,255,255,.2);color:#fff;border-radius:50%;width:42px;height:42px;padding:0;font-size:18px;min-height:0}
+.ld{color:#fff;padding:20px;text-align:center}
+@media(min-width:768px){.thumbs{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.thumbs.adm{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
 .seg{display:flex;gap:8px;margin-bottom:12px}.seg button{flex:1;background:var(--card);color:var(--tx);border:1.5px solid var(--ln);box-shadow:none}.seg button.on{background:var(--pr);color:#fff;border-color:var(--pr)}
 .lang{margin-left:auto;display:flex;border:1.5px solid rgba(255,255,255,.75);border-radius:8px;overflow:hidden;flex:none}
 .lang button{background:transparent;color:#fff;border:0;border-radius:0;padding:6px 11px;min-height:34px;font-size:13px;font-weight:700;box-shadow:none}.lang button.on{background:#f2a900;color:#0a3d62}
@@ -64,7 +77,7 @@ nav a{position:relative}
 <header id="hdr"></header>
 <main id="app"></main>
 <nav id="nav"></nav>
-<div id="lb"><img alt=""></div>
+<div id="lb"><button id="lbx" aria-label="Close">✕</button><div id="lbc"></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -96,7 +109,8 @@ const DEFAULT_SERVICES = [
   {name:"On Demand Service", sub:"Uran (Mora) To Khanderi (Kanhoji Angre Island)", fare:"0", onDemand:true, groups:[]}
 ];
 let C = {}, S = DEFAULT_SERVICES, L = {}, pics = [], bookings = [], enquiries = [], user = null;
-let msgs = [], editingMsg = null;
+let msgs = [], editingMsg = null, vids = [], gTab = "img", agt = "img";
+const vidCache = {};
 let adminTab = "set", svcDraft = null, unsubs = [], shownLoc = "", watch = null, lastSend = 0;
 
 const $ = id => document.getElementById(id);
@@ -114,6 +128,16 @@ const MR = {
  "App heading / name":"अ‍ॅपचे शीर्षक / नाव","Home tagline":"मुख्यपृष्ठ घोषवाक्य","About text":"आमच्याबद्दल मजकूर","Services heading":"सेवा शीर्षक","Phone number":"फोन नंबर","Cell Number 1":"मोबाईल नंबर १","Cell Number 2":"मोबाईल नंबर २","Cell Number 1 → Boat":"मोबाईल नंबर १ → बोट","Cell Number 2 → Boat":"मोबाईल नंबर २ → बोट",
  "Saving and translating…":"जतन व भाषांतर होत आहे…","Type in English or Marathi - the other language is translated automatically.":"इंग्रजी किंवा मराठीत टाइप करा - दुसऱ्या भाषेत आपोआप भाषांतर होईल.",
  "You can type in English or Marathi.":"तुम्ही इंग्रजी किंवा मराठीत टाइप करू शकता.","Mora Jetty, Uran":"मोरा जेटी, उरण",
+ "Images":"फोटो","Video":"व्हिडिओ","No videos yet.":"अद्याप व्हिडिओ नाहीत.","📷 Take photo":"📷 फोटो काढा","🎥 Record video":"🎥 व्हिडिओ रेकॉर्ड करा",
+ "Add video (up to 30 seconds)":"व्हिडिओ जोडा (जास्तीत जास्त ३० सेकंद)",
+ "Choose a video file or record one with the camera. Videos are shrunk and saved without sound.":"व्हिडिओ फाइल निवडा किंवा कॅमेऱ्याने रेकॉर्ड करा. व्हिडिओ लहान करून आवाजाशिवाय जतन केले जातात.",
+ "Processing video… keep this screen open":"व्हिडिओ तयार होत आहे… ही स्क्रीन उघडी ठेवा","Uploading video…":"व्हिडिओ अपलोड होत आहे…","✔ Video added.":"✔ व्हिडिओ जोडला.",
+ "Video is longer than 30 seconds. Please use a shorter video.":"व्हिडिओ ३० सेकंदांपेक्षा मोठा आहे. कृपया लहान व्हिडिओ वापरा.",
+ "This video could not be read. Try another video.":"हा व्हिडिओ वाचता आला नाही. दुसरा व्हिडिओ वापरून पहा.",
+ "Video recording is not supported on this phone or browser.":"या फोनवर किंवा ब्राउझरवर व्हिडिओ प्रक्रिया समर्थित नाही.",
+ "Video is too large after compression. Please record a shorter or simpler video.":"कॉम्प्रेशननंतरही व्हिडिओ मोठा आहे. कृपया लहान किंवा साधा व्हिडिओ रेकॉर्ड करा.",
+ "Could not upload the video. Check your internet and try again.":"व्हिडिओ अपलोड करता आला नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
+ "Loading video…":"व्हिडिओ लोड होत आहे…","This video can't be played on this device.":"हा व्हिडिओ या डिव्हाइसवर चालू शकत नाही.","Could not load the video. Check your internet.":"व्हिडिओ लोड करता आला नाही. इंटरनेट तपासा.","Delete this video?":"हा व्हिडिओ हटवायचा?",
  "Boat 1":"बोट १","Boat 2":"बोट २","Cell numbers":"मोबाईल नंबर","This phone (automatic GPS)":"हा फोन (आपोआप GPS)","This phone is":"हा फोन आहे",
  "WhatsApp number (country code, no +)":"व्हॉट्सअ‍ॅप नंबर (देश कोडसह, + शिवाय)","Enquiry page title":"चौकशी पानाचे शीर्षक","Enquiry page note":"चौकशी पानावरील सूचना",
  "Gallery page title":"गॅलरी पानाचे शीर्षक","Messages page title":"संदेश पानाचे शीर्षक","Location page title":"स्थान पानाचे शीर्षक",
@@ -287,6 +311,7 @@ cfg.doc("location").onSnapshot(d => { L = d.exists ? d.data() : {}; dataChanged(
 db.collection("gallery").orderBy("createdAt").onSnapshot(q => { pics = q.docs.map(d => ({id:d.id, ...d.data()})); dataChanged(); }, () => {});
 db.collection("messages").orderBy("createdAt","desc").onSnapshot(q => { msgs = q.docs.map(d => ({id:d.id, ...d.data()})); dataChanged(); }, () => {});
 myIds().forEach(watchMine);
+db.collection("videos").orderBy("createdAt","desc").onSnapshot(q => { vids = q.docs.map(d => ({id:d.id, ...d.data()})); dataChanged(); }, () => {});
 auth.onAuthStateChanged(u => {
   user = u; unsubs.forEach(f => f()); unsubs = []; bookings = []; enquiries = [];
   if (!u) stopTrack();
@@ -359,8 +384,13 @@ function initEnquiry(){
 }
 
 // ---------- GALLERY (admin-uploaded only) ----------
-function gallery(){ return `<h2>${esc(g("gallery_title"))}</h2>` + (pics.length
-  ? `<div class="grid">${pics.map(p => `<img data-lb loading="lazy" alt="" src="${src(p)}">`).join("")}</div>` : "<p>No photos yet.</p>"); }
+function gallery(){
+  const seg = `<div class="seg">${[["img","Images"],["vid","Video"]].map(([k, l]) => `<button data-gt="${k}" class="${gTab === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
+  const body = gTab === "img"
+    ? (pics.length ? `<div class="thumbs">${pics.map(p => `<img data-lb loading="lazy" alt="" src="${src(p)}">`).join("")}</div>` : "<p>No photos yet.</p>")
+    : (vids.length ? `<div class="thumbs">${vids.map(thumbV).join("")}</div>` : "<p>No videos yet.</p>");
+  return `<h2>${esc(g("gallery_title"))}</h2>${seg}${body}`;
+}
 
 // ---------- MESSAGES (read-only for clients) ----------
 function messages(){
@@ -391,11 +421,7 @@ function admin(){
       return `<label>${esc(F[k][0])}</label><textarea data-k="${k}" rows="${rows}">${esc(val)}</textarea>`; }).join("")
       + `<div id="msg"></div><button class="full" id="save">Save changes</button></div>`;
   else if (adminTab === "svc") { if (!svcDraft) svcDraft = JSON.parse(JSON.stringify(S)); body = svcEditor(); }
-  else if (adminTab === "gal") { const hid = (pics.find(x => x.id === C.home_img_id) || pics[0] || {}).id;
-    body = `<div class="card"><label>Add photos (JPG, PNG or small GIF) - only admin can upload</label><input id="f" type="file" accept="image/*" multiple><div id="msg"></div>
-      <small>The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.</small></div>
-      <div class="grid">${pics.map(p => `<div class="card" style="padding:8px;margin:0"><img alt="" src="${src(p)}">${p.id === hid ? '<span class="pill" style="margin-top:8px">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
-        <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
+  else if (adminTab === "gal") body = galAdmin();
   else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><small>Type in English or Marathi - the other language is translated automatically.</small><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
   else if (adminTab === "loc") body = locAdmin();
   else if (adminTab === "enq") { const rows = enquiries.filter(r => r.status !== "confirmed"); body = `<p><b>${rows.length} enquiries (newest first)</b></p>` + rows.map(enqCard).join(""); }
@@ -404,6 +430,78 @@ function admin(){
     body = `<p><b>${up.length} upcoming · ${dn.length} completed</b></p>` + up.map(bookCard).join("") + (dn.length ? `<h3>Trip Completed</h3>` + dn.map(bookCard).join("") : ""); }
   else body = `<div class="card"><p>Logged in as ${esc(user.email)}</p><small>To change the password: Firebase Console → Authentication → Users.</small><br><br><button id="out">Logout</button></div>`;
   return `<div class="tabs">${tabs.map(t => `<button data-t="${t[0]}" class="${adminTab===t[0]?'on':''}">${t[1]}</button>`).join("")}</div>` + body;
+}
+const thumbV = v => `<button class="vt" data-vid="${v.id}" aria-label="Play video"><img alt="" src="data:image/jpeg;base64,${v.poster}"><span class="play">▶</span><span class="dur">${Math.round(v.dur || 0)}s</span></button>`;
+function galAdmin(){
+  const seg = `<div class="seg">${[["img","Images"],["vid","Video"]].map(([k, l]) => `<button data-agt="${k}" class="${agt === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
+  if (agt === "img") { const hid = (pics.find(x => x.id === C.home_img_id) || pics[0] || {}).id;
+    return seg + `<div class="card"><label>Add photos (JPG, PNG or small GIF) - only admin can upload</label><input id="f" type="file" accept="image/*" multiple>
+      <label class="camb">📷 Take photo<input id="fcam" type="file" accept="image/*" capture="environment" hidden></label><div id="msg"></div>
+      <small>The photo marked ★ Home image is shown on the Home page. If none is marked, the first photo is used.</small></div>
+      <div class="thumbs adm">${pics.map(p => `<div><img data-lb alt="" src="${src(p)}">${p.id === hid ? '<span class="pill">★ Home image</span>' : `<button class="sm gold" data-act="setHome" data-id="${p.id}">Set as Home image</button>`}
+        <button class="sm del" data-act="delPic" data-id="${p.id}">Delete</button></div>`).join("")}</div>`; }
+  return seg + `<div class="card"><label>Add video (up to 30 seconds)</label><input id="fv" type="file" accept="video/*">
+    <label class="camb">🎥 Record video<input id="fvcam" type="file" accept="video/*" capture="environment" hidden></label><div id="msg"></div>
+    <small>Choose a video file or record one with the camera. Videos are shrunk and saved without sound.</small></div>
+    <div class="thumbs adm">${vids.map(v => `<div>${thumbV(v)}<button class="sm del" data-act="delVid" data-id="${v.id}">Delete</button></div>`).join("")}</div>`;
+}
+// ---------- video: check length, shrink in the phone, save in small pieces inside Firestore ----------
+const VERR = {long:"Video is longer than 30 seconds. Please use a shorter video.", read:"This video could not be read. Try another video.", nosupport:"Video recording is not supported on this phone or browser.", big:"Video is too large after compression. Please record a shorter or simpler video.", net:"Could not upload the video. Check your internet and try again."};
+const blobToB64 = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = no; r.readAsDataURL(blob); });
+async function encodeVideo(file, say){
+  const url = URL.createObjectURL(file), v = document.createElement("video");
+  v.muted = true; v.playsInline = true; v.preload = "auto"; v.src = url;
+  try {
+    await new Promise((ok, no) => { v.onloadedmetadata = ok; v.onerror = () => no(new Error("read")); });
+    const dur = v.duration; if (!isFinite(dur) || !v.videoWidth) throw new Error("read");
+    if (dur > 30.5) throw new Error("long");
+    const sc = Math.min(1, 480 / Math.max(v.videoWidth, v.videoHeight)), w = Math.max(2, Math.round(v.videoWidth * sc / 2) * 2), h = Math.max(2, Math.round(v.videoHeight * sc / 2) * 2);
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h; const cx = cv.getContext("2d");
+    const seek = t => new Promise(ok => { v.onseeked = ok; v.currentTime = t; });
+    await seek(Math.min(0.5, dur / 2));
+    const pc = document.createElement("canvas"); pc.width = 240; pc.height = Math.max(2, Math.round(240 * h / w)); pc.getContext("2d").drawImage(v, 0, 0, pc.width, pc.height);
+    const poster = pc.toDataURL("image/jpeg", .6).split(",")[1];
+    if (file.size <= 1.6e6 && /^video\/(mp4|webm)$/.test(file.type)) return {blob:file, mime:file.type, poster, dur};   // already small
+    await seek(0);
+    const mime = ["video/mp4;codecs=avc1.42E01E","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m));
+    if (!mime || !cv.captureStream) throw new Error("nosupport");
+    const stream = cv.captureStream(24), rec = new MediaRecorder(stream, {mimeType:mime, videoBitsPerSecond:400000}), parts = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+    const stopped = new Promise(ok => rec.onstop = ok);
+    rec.start(1000); cx.drawImage(v, 0, 0, w, h);
+    const draw = setInterval(() => cx.drawImage(v, 0, 0, w, h), 1000 / 24);
+    const prog = setInterval(() => say(T("Processing video… keep this screen open") + ` ${Math.min(Math.round(v.currentTime), Math.round(dur))}/${Math.round(dur)}s`), 1000);
+    try { await v.play().catch(() => { throw new Error("read"); }); await new Promise(ok => { v.onended = ok; setTimeout(ok, (dur + 2) * 1000); }); }
+    finally { clearInterval(draw); clearInterval(prog); }
+    rec.stop(); await stopped; stream.getTracks().forEach(t => t.stop());
+    const type = mime.split(";")[0];
+    return {blob:new Blob(parts, {type}), mime:type, poster, dur};
+  } finally { URL.revokeObjectURL(url); }
+}
+async function saveVideo(file, say){
+  const r = await encodeVideo(file, say), b64 = await blobToB64(r.blob);
+  if (b64.length > 4000000) throw new Error("big");
+  const parts = []; for (let i = 0; i < b64.length; i += 600000) parts.push(b64.slice(i, i + 600000));
+  const ref = db.collection("videos").doc();
+  for (let i = 0; i < parts.length; i++) { say(T("Uploading video…") + ` ${i + 1}/${parts.length}`); await ref.collection("chunks").doc(String(i).padStart(3, "0")).set({i, data:parts[i]}); }
+  await ref.set({mime:r.mime, dur:Math.round(r.dur), poster:r.poster, chunks:parts.length, size:r.blob.size, createdAt:Date.now()});   // written last, so clients never see half a video
+}
+async function deleteVideo(id){
+  const ref = db.collection("videos").doc(id), q = await ref.collection("chunks").get(), b = db.batch();
+  q.docs.forEach(d => b.delete(d.ref)); b.delete(ref); await b.commit();
+}
+// ---------- viewer (big picture / video player) ----------
+const openLb = html => { $("lbc").innerHTML = html; $("lb").style.display = "flex"; };
+const closeLb = () => { $("lbc").innerHTML = ""; $("lb").style.display = "none"; };
+async function playVideo(id){
+  openLb(`<p class="ld">${esc(T("Loading video…"))}</p>`);
+  try {
+    let url = vidCache[id];
+    if (!url) { const meta = vids.find(x => x.id === id), q = await db.collection("videos").doc(id).collection("chunks").orderBy("i").get();
+      const blob = await (await fetch(`data:${meta.mime};base64,${q.docs.map(d => d.data().data).join("")}`)).blob(); url = vidCache[id] = URL.createObjectURL(blob); }
+    openLb(`<video controls autoplay muted playsinline src="${url}"></video>`);
+    $("lbc").querySelector("video").onerror = () => { $("lbc").innerHTML = `<p class="ld">${esc(T("This video can't be played on this device."))}</p>`; };
+  } catch (e) { openLb(`<p class="ld">${esc(T("Could not load the video. Check your internet."))}</p>`); }
 }
 function locAdmin(){
   return `<div class="card"><h3>Cell numbers</h3><div id="msg"></div>
@@ -462,11 +560,14 @@ $("app").addEventListener("input", e => {
 $("app").addEventListener("change", e => { const t = e.target; if (t.dataset.f === "od" && svcDraft) svcDraft[+t.dataset.i].onDemand = t.checked; });
 $("app").addEventListener("click", e => {
   const bb = e.target.closest("[data-boat]"); if (bb) { selBoat = +bb.dataset.boat; render(); return; }
-  const lb = e.target.closest("[data-lb]"); if (lb) { $("lb").querySelector("img").src = lb.src; $("lb").style.display = "flex"; return; }
+  const sg = e.target.closest("[data-gt],[data-agt]"); if (sg) { if (sg.dataset.gt) gTab = sg.dataset.gt; else agt = sg.dataset.agt; render(); return; }
+  const lb = e.target.closest("[data-lb]"); if (lb) { openLb(`<img alt="" src="${lb.src}">`); return; }
+  const vb = e.target.closest("[data-vid]"); if (vb) { playVideo(vb.dataset.vid); return; }
   const tb = e.target.closest("[data-t]"); if (tb) { adminTab = tb.dataset.t; editingMsg = null; if (adminTab !== "svc") svcDraft = null; render(); return; }
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j, k = +b.dataset.k, id = b.dataset.id;
   if (a === "setHome") { cfg.doc("content").set({home_img_id:id}, {merge:true}); return; }
+  if (a === "delVid") { if (confirm(T("Delete this video?"))) deleteVideo(id).catch(() => alert(T("Could not save."))); return; }
   if (a === "delPic") { if (confirm(T("Delete this photo?"))) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
   if (a === "delRec") { if (confirm(T("Delete this record?"))) db.collection(b.dataset.col).doc(id).delete(); return; }
   if (a === "locSave") { saveBoatPos(i); return; }
@@ -493,7 +594,8 @@ $("app").addEventListener("click", e => {
   else return;
   render();
 });
-$("lb").onclick = () => { $("lb").style.display = "none"; };
+$("lb").onclick = e => { if (e.target.tagName !== "VIDEO") closeLb(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeLb(); });
 
 function initAdmin(){
   const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
@@ -521,7 +623,11 @@ function initAdmin(){
       await cfg.doc("services").set({items}); svcDraft = JSON.parse(JSON.stringify(items)); render();
       $("msg").innerHTML = '<span class="ok">✔ Services saved. Clients now see the new timings.</span>'; }
     catch (e) { $("msg").innerHTML = '<span class="err">Could not save.</span>'; } });
-  const f = $("f"); if (f) f.onchange = async () => { $("msg").textContent = "Uploading..."; for (const file of f.files) await addPhoto(file); $("msg").textContent = "Done."; f.value = ""; };
+  const say = m => { const el = $("msg"); if (el) el.textContent = m; };
+  const imgUp = async inp => { const files = [...inp.files]; inp.value = ""; say(T("Uploading...")); for (const file of files) await addPhoto(file); say(T("Done.")); };
+  const vidUp = async inp => { const files = [...inp.files]; inp.value = "";
+    for (const file of files) { try { await saveVideo(file, say); say(T("✔ Video added.")); } catch (e) { say(T(VERR[e.message] || VERR.net)); } } };
+  [["f", imgUp], ["fcam", imgUp], ["fv", vidUp], ["fvcam", vidUp]].forEach(([id, fn]) => { const el = $(id); if (el) el.onchange = () => fn(el); });
   [1, 2].forEach(n => { const e = $("en" + n); if (e) e.onchange = () => cfg.doc("location").set({["b" + n + "_enabled"]: e.checked}, {merge:true}); });
   const c1 = $("c1b"), c2 = $("c2b");
   if (c1) c1.onchange = () => cfg.doc("location").set({cell1Boat:+c1.value}, {merge:true});
