@@ -48,6 +48,11 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
 nav a{position:relative}
+@media(max-width:400px){nav a{font-size:10px}}
+.potd{padding:8px}.potd img{width:100%;max-height:70vh;object-fit:contain;border-radius:10px;display:block;cursor:zoom-in;background:#000}
+#cam{position:fixed;inset:0;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))}
+#cam video,#cam img{max-width:100%;max-height:72vh;border-radius:12px;background:#111}
+.camrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 .thumbs>img,.thumbs .vt,.thumbs.adm img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;border-radius:10px;display:block;cursor:pointer}
 .thumbs.adm{grid-template-columns:repeat(auto-fill,minmax(108px,1fr))}
@@ -77,6 +82,7 @@ nav a{position:relative}
 <header id="hdr"></header>
 <main id="app"></main>
 <nav id="nav"></nav>
+<div id="cam"></div>
 <div id="lb"><button id="lbx" aria-label="Close">✕</button><div id="lbc"></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -87,6 +93,7 @@ nav a{position:relative}
 firebase.initializeApp(window.FIREBASE_CONFIG);
 const auth = firebase.auth(), db = firebase.firestore(), cfg = db.collection("config");
 
+const FUN_INFO = "How to play:\n1. The Take Picture button opens every morning at 7:00 AM.\n2. Only the first 5 clients can take a picture. One picture per client, from the camera only.\n3. At 4:00 PM one picture is picked at random as the Picture of the Day.\n4. All other pictures are then deleted. The Picture of the Day stays until 7:00 AM the next day.\n(All times are Indian Standard Time.)";
 const F = {
   app_name:["App heading / name","Shree Ram Launch Service"],
   tagline:["Home tagline","Safe & comfortable passenger launch service from Uran (Mora)"],
@@ -99,6 +106,8 @@ const F = {
   enq_note:["Enquiry page note","Send an enquiry for our On Demand Service. We will confirm your trip once payment is received."],
   gallery_title:["Gallery page title","Gallery"],
   msg_title:["Messages page title","Messages"],
+  fun_title:["Fun page title","Fun Corner"],
+  fun_info:["Fun page instructions", FUN_INFO],
   loc_title:["Location page title","Live Launch Location"]
 };
 // Sample timings - the owner edits them in Admin > Services
@@ -117,6 +126,7 @@ const $ = id => document.getElementById(id);
 const MR = {
  "Home":"मुख्यपृष्ठ","Enquiry":"चौकशी","Gallery":"गॅलरी","Messages":"संदेश","Location":"स्थान","Admin":"अ‍ॅडमिन","Settings":"सेटिंग्ज","Services":"सेवा","Account":"खाते",
  "Shree Ram Launch Service":"श्री राम लाँच सर्व्हिस",
+ [FUN_INFO]:"कसे खेळायचे:\n१. 'फोटो काढा' बटण रोज सकाळी ७:०० वाजता सुरू होते.\n२. फक्त पहिले ५ ग्राहकच फोटो काढू शकतात. प्रत्येक ग्राहकाला एकच फोटो, फक्त कॅमेऱ्यातून.\n३. दुपारी ४:०० वाजता एक फोटो यादृच्छिकपणे 'दिवसाचे चित्र' म्हणून निवडला जातो.\n४. इतर सर्व फोटो नंतर हटवले जातात. 'दिवसाचे चित्र' दुसऱ्या दिवशी सकाळी ७:०० वाजेपर्यंत दिसते.\n(सर्व वेळा भारतीय प्रमाण वेळेनुसार.)",
  "Safe & comfortable passenger launch service from Uran (Mora)":"उरण (मोरा) येथून सुरक्षित व आरामदायी प्रवासी लाँच सेवा",
  "Shree Ram Launch Service runs passenger launches from Mora Jetty, Uran to Mumbai (Colaba) and Khanderi (Kanhoji Angre Island), with life jackets and experienced crew.":"श्री राम लाँच सर्व्हिस मोरा जेटी, उरण येथून मुंबई (कुलाबा) आणि खांदेरी (कान्होजी आंग्रे बेट) येथे प्रवासी लाँच सेवा चालवते. लाइफ जॅकेट आणि अनुभवी कर्मचारी उपलब्ध आहेत.",
  "On Demand Enquiry":"मागणीनुसार सेवेसाठी चौकशी",
@@ -138,6 +148,16 @@ const MR = {
  "Video is too large after compression. Please record a shorter or simpler video.":"कॉम्प्रेशननंतरही व्हिडिओ मोठा आहे. कृपया लहान किंवा साधा व्हिडिओ रेकॉर्ड करा.",
  "Could not upload the video. Check your internet and try again.":"व्हिडिओ अपलोड करता आला नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
  "Loading video…":"व्हिडिओ लोड होत आहे…","This video can't be played on this device.":"हा व्हिडिओ या डिव्हाइसवर चालू शकत नाही.","Could not load the video. Check your internet.":"व्हिडिओ लोड करता आला नाही. इंटरनेट तपासा.","Delete this video?":"हा व्हिडिओ हटवायचा?",
+ "Fun":"मजा","Fun Corner":"मजा कोपरा","Fun page title":"मजा पानाचे शीर्षक","Fun page instructions":"मजा पानावरील सूचना",
+ "📸 Take Picture":"📸 फोटो काढा","Take Picture opens every morning at 7:00 AM.":"'फोटो काढा' रोज सकाळी ७:०० वाजता सुरू होते.",
+ "All 5 pictures are taken for today. Come back tomorrow at 7:00 AM.":"आजचे सर्व ५ फोटो काढले गेले आहेत. उद्या सकाळी ७:०० वाजता परत या.",
+ "You have already taken your picture today.":"तुम्ही आज तुमचा फोटो काढला आहे.","Open now - tap the button to take your picture.":"सुरू आहे - फोटो काढण्यासाठी बटण दाबा.",
+ "Pictures taken today:":"आज काढलेले फोटो:","Today's Clicks":"आजचे क्लिक्स","No pictures yet today.":"आज अद्याप फोटो नाहीत.","Picture of the Day":"दिवसाचे चित्र","★ Picture of the Day":"★ दिवसाचे चित्र",
+ "Selecting the Picture of the Day…":"दिवसाचे चित्र निवडले जात आहे…","The Picture of the Day is not available.":"दिवसाचे चित्र उपलब्ध नाही.","The Picture of the Day stays until 7:00 AM tomorrow.":"'दिवसाचे चित्र' उद्या सकाळी ७:०० वाजेपर्यंत दिसेल.",
+ "Capture":"फोटो घ्या","Switch camera":"कॅमेरा बदला","Send":"पाठवा","Retake":"पुन्हा काढा","Opening the camera…":"कॅमेरा उघडत आहे…","Sending…":"पाठवत आहे…",
+ "Could not open the camera. Please allow camera access.":"कॅमेरा उघडता आला नाही. कृपया कॅमेऱ्याची परवानगी द्या.","✔ Your picture is in!":"✔ तुमचा फोटो मिळाला!",
+ "Could not send the picture. It may be full or closed. Try again later.":"फोटो पाठवता आला नाही. कदाचित जागा संपली असेल किंवा वेळ संपली असेल. नंतर पुन्हा प्रयत्न करा.",
+ "Delete this picture?":"हा फोटो हटवायचा?","The admin can delete any picture at any time.":"अ‍ॅडमिन कोणताही फोटो केव्हाही हटवू शकतो.",
  "Boat 1":"बोट १","Boat 2":"बोट २","Cell numbers":"मोबाईल नंबर","This phone (automatic GPS)":"हा फोन (आपोआप GPS)","This phone is":"हा फोन आहे",
  "WhatsApp number (country code, no +)":"व्हॉट्सअ‍ॅप नंबर (देश कोडसह, + शिवाय)","Enquiry page title":"चौकशी पानाचे शीर्षक","Enquiry page note":"चौकशी पानावरील सूचना",
  "Gallery page title":"गॅलरी पानाचे शीर्षक","Messages page title":"संदेश पानाचे शीर्षक","Location page title":"स्थान पानाचे शीर्षक",
@@ -298,7 +318,7 @@ const unreadCount = () => { const r = getRead(); return msgs.filter(m => isNew(m
 const markRead = () => { try { const r = {}; msgs.forEach(m => r[m.id] = m.updatedAt || m.createdAt); localStorage.setItem(RK, JSON.stringify(r)); } catch (e) {} };
 const fmt = ts => new Date(ts).toLocaleString(lang === "mr" ? "mr-IN" : [], {day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit"});
 
-const TABS = [["home","🏠","Home"],["enquiry","✉️","Enquiry"],["gallery","🖼️","Gallery"],["messages","💬","Messages"],["location","📍","Location"],["admin","🔒","Admin"]];
+const TABS = [["home","🏠","Home"],["enquiry","✉️","Enquiry"],["gallery","🖼️","Gallery"],["messages","💬","Messages"],["location","📍","Location"],["fun","🎉","Fun"],["admin","🔒","Admin"]];
 function chrome(){
   $("hdr").innerHTML = `<span class="logo">⚓</span><span class="hn">${esc(g("app_name"))}</span><span class="lang"><button data-lang="en" class="${lang === "en" ? "on" : ""}">EN</button><button data-lang="mr" class="${lang === "mr" ? "on" : ""}">MAR</button></span>`; document.title = g("app_name");
   $("nav").innerHTML = TABS.map(t => `<a href="#${t[0]}" class="${page()===t[0]?'on':''}"><span>${t[1]}</span>${t[2]}${t[0]==="messages"&&unreadCount()?`<i class="bdg">${unreadCount()>99?"99+":unreadCount()}</i>`:""}</a>`).join("");
@@ -322,10 +342,10 @@ auth.onAuthStateChanged(u => {
 // Re-draw only pages without typing areas, so forms are never wiped
 function dataChanged(){
   chrome(); const p = page();
-  if (p === "home" || p === "gallery" || p === "messages") render();
+  if (p === "home" || p === "gallery" || p === "messages" || p === "fun") render();
   else if (p === "enquiry") refreshMine();
   else if (p === "location" && locKey() !== shownLoc) render();
-  else if (p === "admin" && user && ["gal","book","enq"].includes(adminTab)) render();
+  else if (p === "admin" && user && ["gal","book","enq","fun"].includes(adminTab)) render();
   else if (p === "admin" && user && adminTab === "loc") locStatus();
   else if (p === "admin" && user && adminTab === "msg") refreshMsgList();
 }
@@ -333,8 +353,8 @@ window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); }
 
 function render(){
   const p = page();
-  $("app").innerHTML = ({home, enquiry, gallery, messages, location:locate, admin}[p] || home)();
-  const init = {enquiry:initEnquiry, admin:initAdmin}[p]; if (init) init();
+  $("app").innerHTML = ({home, enquiry, gallery, messages, location:locate, fun, admin}[p] || home)();
+  const init = {enquiry:initEnquiry, admin:initAdmin, fun:initFun}[p]; if (init) init();
   chrome();
 }
 
@@ -392,6 +412,112 @@ function gallery(){
   return `<h2>${esc(g("gallery_title"))}</h2>${seg}${body}`;
 }
 
+// ---------- FUN: Take Picture (camera only, 5 per day, Picture of the Day) ----------
+// A "fun day" starts at 07:00 IST. Open 07:00-16:00, winner picked from 16:00, everything removed at the next 07:00.
+const FUN_CLOSE = 32400000, FUN_MAX = 5;
+const fday = () => Math.floor((Date.now() - 5400000) / 86400000);
+const foff = () => (Date.now() - 5400000) % 86400000;
+const fsrc = p => "data:image/jpeg;base64," + p.data;
+let fpics = [], fcount = 0, fwin = null, funDay = -1, funUnsubs = [], funWanted = false, funNote = "", camStream = null, camFacing = "user", camShot = null, memDev = "";
+let picking = false, emptyDay = -1, cleaning = false, cleanedDay = -1;
+const devId = () => { try { let d = localStorage.getItem("shreeram_dev"); if (!d) { d = newId(); localStorage.setItem("shreeram_dev", d); } return d; } catch (e) { return memDev || (memDev = newId()); } };
+function subFun(){
+  funWanted = true; const d = fday(); if (d === funDay) return;
+  funDay = d; funUnsubs.forEach(f => f()); funUnsubs = []; fpics = []; fwin = null; fcount = 0;
+  funUnsubs.push(db.collection("funPics").where("day", "==", d).onSnapshot(q => { fpics = q.docs.map(x => ({id:x.id, ...x.data()})); dataChanged(); }, () => {}));
+  funUnsubs.push(db.collection("funDays").doc(String(d)).onSnapshot(x => { fcount = x.exists ? (x.data().count || 0) : 0; dataChanged(); }, () => {}));
+  funUnsubs.push(db.collection("funWinner").doc(String(d)).onSnapshot(x => { fwin = x.exists ? x.data() : null; dataChanged(); }, () => {}));
+}
+async function ensureWinner(){            // after 4 PM the first phone that notices picks one picture at random
+  const d = fday(); if (picking || fwin || foff() < FUN_CLOSE || (emptyDay === d && !fpics.length)) return; picking = true;
+  try { const ref = db.collection("funWinner").doc(String(d)); if ((await ref.get()).exists) return;
+    const q = await db.collection("funPics").where("day", "==", d).get(); if (q.empty) { emptyDay = d; return; }
+    await ref.set({pic:q.docs[Math.floor(Math.random() * q.size)].id, at:Date.now(), day:d}); }
+  catch (e) {} finally { picking = false; }
+}
+const delAll = async docs => { for (let i = 0; i < docs.length; i += 400) { const b = db.batch(); docs.slice(i, i + 400).forEach(x => b.delete(x.ref)); await b.commit().catch(() => {}); } };
+async function funCleanup(){               // removes yesterday's pictures and, after the draw, today's other pictures
+  const d = fday(), extra = fwin ? fpics.filter(p => p.id !== fwin.pic) : [];
+  if (cleaning || (cleanedDay === d && !extra.length)) return; cleaning = true;
+  try { if (cleanedDay !== d) { for (const col of ["funPics","funWinner","funDays"]) { const q = await db.collection(col).where("day", "<", d).get(); await delAll(q.docs); } cleanedDay = d; }
+    for (const p of extra) await db.collection("funPics").doc(p.id).delete().catch(() => {}); }
+  catch (e) {} finally { cleaning = false; }
+}
+function tick(){ if (!funWanted) return; subFun(); ensureWinner(); funCleanup(); dataChanged(); }
+async function adminDelFun(id){
+  const p = fpics.find(x => x.id === id); if (!p) return; const b = db.batch();
+  b.delete(db.collection("funPics").doc(id));
+  if (!fwin && p.day === fday()) b.set(db.collection("funDays").doc(String(p.day)), {count:firebase.firestore.FieldValue.increment(-1)}, {merge:true});   // frees the slot
+  await b.commit();
+}
+function funState(){
+  const n = Math.max(fcount, fpics.length), mine = fpics.find(p => p.owner === devId());
+  if (fwin || foff() >= FUN_CLOSE) return {n, can:false, reason:"Take Picture opens every morning at 7:00 AM."};
+  if (mine) return {n, can:false, reason:"You have already taken your picture today."};
+  if (n >= FUN_MAX) return {n, can:false, reason:"All 5 pictures are taken for today. Come back tomorrow at 7:00 AM."};
+  return {n, can:true, reason:"Open now - tap the button to take your picture."};
+}
+function fun(){
+  subFun(); ensureWinner(); funCleanup();
+  const st = funState(); let lower;
+  if (fwin) { const w = fpics.find(p => p.id === fwin.pic);
+    lower = `<h2>Picture of the Day</h2>` + (w ? `<div class="card potd"><img data-lb alt="" src="${fsrc(w)}"></div><small>The Picture of the Day stays until 7:00 AM tomorrow.</small>` : `<div class="card"><p>The Picture of the Day is not available.</p></div>`); }
+  else lower = `<h2>Today's Clicks</h2>` + (foff() >= FUN_CLOSE && fpics.length ? `<p><small>Selecting the Picture of the Day…</small></p>` : "")
+    + (fpics.length ? `<div class="thumbs">${fpics.map(p => `<img data-lb loading="lazy" alt="" src="${fsrc(p)}">`).join("")}</div>` : "<p>No pictures yet today.</p>");
+  return `<h2>${esc(g("fun_title"))}</h2><div class="card"><p>${esc(g("fun_info"))}</p></div>${funNote ? `<p class="ok">${esc(funNote)}</p>` : ""}
+   <button class="full" id="takepic" ${st.can ? "" : "disabled"}>📸 Take Picture</button><p><small>${esc(st.reason)}</small></p>
+   <p><small>${esc(T("Pictures taken today:"))} ${dnum(Math.min(st.n, FUN_MAX))}/${dnum(FUN_MAX)}</small></p>${lower}`;
+}
+function initFun(){ const b = $("takepic"); if (b) b.onclick = () => { if (funState().can) openCam(); }; }
+function funAdmin(){
+  subFun(); const n = Math.max(fcount, fpics.length);
+  return `<div class="card"><p><b>${esc(T("Pictures taken today:"))} ${dnum(Math.min(n, FUN_MAX))}/${dnum(FUN_MAX)}</b></p><small>The admin can delete any picture at any time.</small></div>`
+    + (fpics.length ? `<div class="thumbs adm">${fpics.map(p => `<div><img data-lb alt="" src="${fsrc(p)}">${fwin && fwin.pic === p.id ? '<span class="pill">★ Picture of the Day</span>' : ""}<button class="sm del" data-act="delFun" data-id="${p.id}">Delete</button></div>`).join("")}</div>` : "<p>No pictures yet today.</p>");
+}
+// ---- camera (live camera only; nothing can be uploaded from the gallery) ----
+function camRow(html){ $("camrow").innerHTML = html; }
+async function openCam(){
+  const el = $("cam"); el.style.display = "flex"; camShot = null;
+  el.innerHTML = `<video id="camv" autoplay playsinline muted></video><img id="camp" alt="" style="display:none"><p id="camm" class="ld">Opening the camera…</p><div class="camrow" id="camrow"></div>`;
+  camLive(); await startCam();
+}
+function camLive(){
+  camRow(`<button id="camcap">Capture</button><button id="camsw" class="gold">Switch camera</button><button id="camx" class="del">Cancel</button>`);
+  $("camx").onclick = closeCam; $("camcap").onclick = shoot; $("camsw").onclick = () => { camFacing = camFacing === "user" ? "environment" : "user"; startCam(); };
+}
+async function startCam(){
+  stopCam(); const v = $("camv"), im = $("camp"); if (!v) return; im.style.display = "none"; v.style.display = "block";
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { fallbackShot(); return; }
+  try { camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:camFacing}, width:{ideal:1280}}, audio:false});
+    v.srcObject = camStream; await v.play().catch(() => {}); $("camm").textContent = ""; }
+  catch (e) { const m = $("camm"); if (m) m.textContent = T("Could not open the camera. Please allow camera access."); }
+}
+function stopCam(){ if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; } }
+function closeCam(){ stopCam(); $("cam").style.display = "none"; $("cam").innerHTML = ""; }
+function showShot(b64){
+  camShot = b64; stopCam(); const v = $("camv"), im = $("camp"); v.style.display = "none"; im.src = "data:image/jpeg;base64," + b64; im.style.display = "block"; $("camm").textContent = "";
+  camRow(`<button id="camok">Send</button><button id="camre" class="gold">Retake</button><button id="camx" class="del">Cancel</button>`);
+  $("camx").onclick = closeCam; $("camre").onclick = () => { camLive(); startCam(); }; $("camok").onclick = sendShot;
+}
+function shoot(){
+  const v = $("camv"); if (!v || !v.videoWidth) return;
+  const sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement("canvas"); c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
+  c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); showShot(c.toDataURL("image/jpeg", .6).split(",")[1]);
+}
+function fallbackShot(){                  // only for old browsers without a live camera: opens the phone's camera app
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "user");
+  inp.onchange = () => { const f = inp.files[0]; if (!f) return; const img = new Image(); img.onload = () => { const sc = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); showShot(c.toDataURL("image/jpeg", .6).split(",")[1]); }; img.src = URL.createObjectURL(f); };
+  inp.click();
+}
+async function sendShot(){
+  const d = fday(), owner = devId(), id = d + "_" + owner, m = $("camm"); m.textContent = T("Sending…");
+  const b = db.batch(); b.set(db.collection("funPics").doc(id), {day:d, owner, data:camShot, createdAt:Date.now()});
+  b.set(db.collection("funDays").doc(String(d)), {count:firebase.firestore.FieldValue.increment(1), last:id, day:d}, {merge:true});
+  try { await b.commit(); closeCam(); funNote = T("✔ Your picture is in!"); setTimeout(() => { funNote = ""; dataChanged(); }, 8000); dataChanged(); }
+  catch (e) { const mm = $("camm"); if (mm) mm.textContent = T("Could not send the picture. It may be full or closed. Try again later."); }
+}
+
 // ---------- MESSAGES (read-only for clients) ----------
 function messages(){
   const r = getRead(), items = msgs.map(m => ({m, n:isNew(m, r)}));
@@ -414,15 +540,16 @@ function locate(){
 function admin(){
   if (!user) return `<h2>Admin Login</h2><div class="card"><label>Admin email</label><input id="ae" type="email" autocomplete="username"><label>Password</label><input id="ap" type="password" autocomplete="current-password">
    <div id="msg"></div><button class="full" id="go">Login</button></div>`;
-  const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["msg","Messages"],["loc","Location"],["enq","Enquiry (" + enquiries.filter(r => r.status !== "confirmed").length + ")"],["book","Bookings (" + enquiries.filter(r => r.status === "confirmed").length + ")"],["acc","Account"]];
+  const tabs = [["set","Settings"],["svc","Services"],["gal","Gallery"],["msg","Messages"],["loc","Location"],["fun","Fun"],["enq","Enquiry (" + enquiries.filter(r => r.status !== "confirmed").length + ")"],["book","Bookings (" + enquiries.filter(r => r.status === "confirmed").length + ")"],["acc","Account"]];
   let body = "";
   if (adminTab === "set") body = `<div class="card"><p><b>Edit any text, then tap Save. Clients see changes immediately.</b></p><small>Type in English or Marathi - the other language is translated automatically.</small>` + Object.keys(F).map(k => {
-      const rows = ["about","tagline","enq_note"].includes(k) ? 3 : 1, val = ["phone","phone2","whatsapp"].includes(k) ? gEn(k) : (lang === "mr" ? g(k) : gEn(k));
+      const rows = k === "fun_info" ? 8 : ["about","tagline","enq_note"].includes(k) ? 3 : 1, val = ["phone","phone2","whatsapp"].includes(k) ? gEn(k) : (lang === "mr" ? g(k) : gEn(k));
       return `<label>${esc(F[k][0])}</label><textarea data-k="${k}" rows="${rows}">${esc(val)}</textarea>`; }).join("")
       + `<div id="msg"></div><button class="full" id="save">Save changes</button></div>`;
   else if (adminTab === "svc") { if (!svcDraft) svcDraft = JSON.parse(JSON.stringify(S)); body = svcEditor(); }
   else if (adminTab === "gal") body = galAdmin();
   else if (adminTab === "msg") body = `<div class="card"><label>New message to all clients</label><textarea id="mtext" rows="4" placeholder="e.g. Service cancelled today due to rough sea"></textarea><small>Type in English or Marathi - the other language is translated automatically.</small><div id="msg"></div><button class="full" id="mpost">Post message</button></div><div id="msglist">${msgListAdmin()}</div>`;
+  else if (adminTab === "fun") body = funAdmin();
   else if (adminTab === "loc") body = locAdmin();
   else if (adminTab === "enq") { const rows = enquiries.filter(r => r.status !== "confirmed"); body = `<p><b>${rows.length} enquiries (newest first)</b></p>` + rows.map(enqCard).join(""); }
   else if (adminTab === "book") { const rows = enquiries.filter(r => r.status === "confirmed");
@@ -567,6 +694,7 @@ $("app").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const a = b.dataset.act, i = +b.dataset.i, j = +b.dataset.j, k = +b.dataset.k, id = b.dataset.id;
   if (a === "setHome") { cfg.doc("content").set({home_img_id:id}, {merge:true}); return; }
+  if (a === "delFun") { if (confirm(T("Delete this picture?"))) adminDelFun(id).catch(() => alert(T("Could not save."))); return; }
   if (a === "delVid") { if (confirm(T("Delete this video?"))) deleteVideo(id).catch(() => alert(T("Could not save."))); return; }
   if (a === "delPic") { if (confirm(T("Delete this photo?"))) { db.collection("gallery").doc(id).delete(); if (C.home_img_id === id) cfg.doc("content").set({home_img_id:""}, {merge:true}); } return; }
   if (a === "delRec") { if (confirm(T("Delete this record?"))) db.collection(b.dataset.col).doc(id).delete(); return; }
@@ -667,6 +795,7 @@ $("hdr").addEventListener("click", e => { const b = e.target.closest("[data-lang
 new MutationObserver(ms => { if (lang !== "mr") return; ms.forEach(m => { if (m.type === "characterData") trNode(m.target); m.addedNodes.forEach(trNode); }); })
   .observe(document.body, {childList:true, subtree:true, characterData:true});
 document.documentElement.lang = lang === "mr" ? "mr" : "en";
+setInterval(tick, 20000); document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
 render();
 if ("serviceWorker" in navigator && !window.Capacitor && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
