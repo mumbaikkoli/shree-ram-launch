@@ -48,6 +48,10 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
 nav a{position:relative}
+.vstats{display:flex;gap:10px;margin-top:16px}.stat{flex:1;text-align:center;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:10px 6px;box-shadow:var(--sh)}
+.stat b{display:block;font-size:22px;line-height:1.2;color:var(--pr)}.stat small{font-size:12px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;vertical-align:middle;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:.25}100%{opacity:1}}
 @media(max-width:400px){nav a{font-size:10px}}
 .potd{padding:8px}.potd img{width:100%;max-height:70vh;object-fit:contain;border-radius:10px;display:block;cursor:zoom-in;background:#000}
 #cam{position:fixed;inset:0;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;padding:calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom))}
@@ -148,6 +152,7 @@ const MR = {
  "Video is too large after compression. Please record a shorter or simpler video.":"कॉम्प्रेशननंतरही व्हिडिओ मोठा आहे. कृपया लहान किंवा साधा व्हिडिओ रेकॉर्ड करा.",
  "Could not upload the video. Check your internet and try again.":"व्हिडिओ अपलोड करता आला नाही. इंटरनेट तपासा आणि पुन्हा प्रयत्न करा.",
  "Loading video…":"व्हिडिओ लोड होत आहे…","This video can't be played on this device.":"हा व्हिडिओ या डिव्हाइसवर चालू शकत नाही.","Could not load the video. Check your internet.":"व्हिडिओ लोड करता आला नाही. इंटरनेट तपासा.","Delete this video?":"हा व्हिडिओ हटवायचा?",
+ "Current Visitors":"सध्याचे अभ्यागत","Total Visitors":"एकूण अभ्यागत",
  "Fun":"मजा","Fun Corner":"मजा कोपरा","Fun page title":"मजा पानाचे शीर्षक","Fun page instructions":"मजा पानावरील सूचना",
  "📸 Take Picture":"📸 फोटो काढा","Take Picture opens every morning at 7:00 AM.":"'फोटो काढा' रोज सकाळी ७:०० वाजता सुरू होते.",
  "All 5 pictures are taken for today. Come back tomorrow at 7:00 AM.":"आजचे सर्व ५ फोटो काढले गेले आहेत. उद्या सकाळी ७:०० वाजता परत या.",
@@ -349,7 +354,7 @@ function dataChanged(){
   else if (p === "admin" && user && adminTab === "loc") locStatus();
   else if (p === "admin" && user && adminTab === "msg") refreshMsgList();
 }
-window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); heartbeat(); });
 
 function render(){
   const p = page();
@@ -371,7 +376,8 @@ function home(){ return `
  <div class="svcs">${S.map((s,i) => `<div class="card"><div class="svc-h"><h3><span class="num">${i+1}</span>${esc(tx(s.name, s.name_mr))}</h3>${isOD(s) ? '<span class="pill">On Demand</span>' : ""}${parseFloat(s.fare) ? `<span class="fare">₹${esc(s.fare)}</span>` : ""}</div>
    ${s.sub ? `<p style="margin:0 0 6px;color:var(--mut)">${esc(tx(s.sub, s.sub_mr))}</p>` : ""}${isOD(s) && !(s.groups || []).some(gr => (gr.times || []).some(Boolean)) ? "<p><small>Available on request - please send an enquiry.</small></p>" : ""}${(s.groups || []).map(gr => `<div class="grp"><b>${esc(tx(gr.label, gr.label_mr))}</b><div class="chips">${(gr.times || []).filter(Boolean).map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div></div>`).join("")}</div>`).join("")}</div>
  <a class="btn full" href="#enquiry">Send Enquiry</a>
- ${[gEn("phone"), gEn("phone2")].filter(Boolean).map(c => `<a class="btn alt full" href="tel:${esc(c)}">📞 Call ${esc(c)}</a>`).join("")}`; }
+ ${[gEn("phone"), gEn("phone2")].filter(Boolean).map(c => `<a class="btn alt full" href="tel:${esc(c)}">📞 Call ${esc(c)}</a>`).join("")}
+ <div class="vstats">${statsInner()}</div>`; }
 
 // ---------- ENQUIRY (On Demand Service) + MY BOOKING ----------
 function enquiry(){
@@ -410,6 +416,31 @@ function gallery(){
     ? (pics.length ? `<div class="thumbs">${pics.map(p => `<img data-lb loading="lazy" alt="" src="${src(p)}">`).join("")}</div>` : "<p>No photos yet.</p>")
     : (vids.length ? `<div class="thumbs">${vids.map(thumbV).join("")}</div>` : "<p>No videos yet.</p>");
   return `<h2>${esc(g("gallery_title"))}</h2>${seg}${body}`;
+}
+
+// ---------- VISITORS: "Current Visitors" (active in the last few minutes) and "Total Visitors" (each phone counted once) ----------
+let vTotal = null, vOnline = 0, hbBucket = -1, lastRead = 0;
+const nf = n => Number(n).toLocaleString(lang === "mr" ? "mr-IN" : "en-IN");
+const statsInner = () => `<div class="stat"><b><span class="dot"></span>${vOnline ? nf(vOnline) : "–"}</b><small>Current Visitors</small></div><div class="stat"><b>${vTotal === null ? "–" : nf(vTotal)}</b><small>Total Visitors</small></div>`;
+const updateStats = () => document.querySelectorAll(".vstats").forEach(el => { el.innerHTML = statsInner(); });
+const bucketNow = () => Math.floor(Date.now() / 180000);          // 3-minute windows
+function visitorsInit(){
+  db.collection("stats").doc("visitors").onSnapshot(d => { vTotal = d.exists ? (d.data().total || 0) : 0; updateStats(); }, () => {});
+  try { if (!localStorage.getItem("shreeram_counted")) countVisitor(); } catch (e) {}
+}
+async function countVisitor(){
+  const id = devId(), b = db.batch();
+  b.set(db.collection("visitors").doc(id), {t:Date.now()});
+  b.set(db.collection("stats").doc("visitors"), {total:firebase.firestore.FieldValue.increment(1), last:id}, {merge:true});
+  try { await b.commit(); localStorage.setItem("shreeram_counted", "1"); } catch (e) {}
+}
+async function heartbeat(){
+  if (document.hidden) return; const b = bucketNow();
+  if (b !== hbBucket) { hbBucket = b; db.collection("online").doc(String(b)).set({[devId()]:true}, {merge:true}).catch(() => { hbBucket = -1; }); }
+  const p = page(); if ((p !== "home" && p !== "admin") || Date.now() - lastRead < 20000) return; lastRead = Date.now();
+  try { const [c, o] = await Promise.all([db.collection("online").doc(String(b)).get(), db.collection("online").doc(String(b - 1)).get()]);
+    const keys = new Set([...(c.exists ? Object.keys(c.data()) : []), ...(o.exists ? Object.keys(o.data()) : [])]);
+    vOnline = Math.max(keys.size, 1); updateStats(); } catch (e) {}
 }
 
 // ---------- FUN: Take Picture (camera only, 5 per day, Picture of the Day) ----------
@@ -556,7 +587,7 @@ function admin(){
     const up = rows.filter(r => !isDone(r)).sort((x, y) => (x.date || "").localeCompare(y.date || "")), dn = rows.filter(isDone).sort((x, y) => (y.date || "").localeCompare(x.date || ""));
     body = `<p><b>${up.length} upcoming · ${dn.length} completed</b></p>` + up.map(bookCard).join("") + (dn.length ? `<h3>Trip Completed</h3>` + dn.map(bookCard).join("") : ""); }
   else body = `<div class="card"><p>Logged in as ${esc(user.email)}</p><small>To change the password: Firebase Console → Authentication → Users.</small><br><br><button id="out">Logout</button></div>`;
-  return `<div class="tabs">${tabs.map(t => `<button data-t="${t[0]}" class="${adminTab===t[0]?'on':''}">${t[1]}</button>`).join("")}</div>` + body;
+  return `<div class="vstats" style="margin:0 0 12px">${statsInner()}</div><div class="tabs">${tabs.map(t => `<button data-t="${t[0]}" class="${adminTab===t[0]?'on':''}">${t[1]}</button>`).join("")}</div>` + body;
 }
 const thumbV = v => `<button class="vt" data-vid="${v.id}" aria-label="Play video"><img alt="" src="data:image/jpeg;base64,${v.poster}"><span class="play">▶</span><span class="dur">${Math.round(v.dur || 0)}s</span></button>`;
 function galAdmin(){
@@ -795,7 +826,8 @@ $("hdr").addEventListener("click", e => { const b = e.target.closest("[data-lang
 new MutationObserver(ms => { if (lang !== "mr") return; ms.forEach(m => { if (m.type === "characterData") trNode(m.target); m.addedNodes.forEach(trNode); }); })
   .observe(document.body, {childList:true, subtree:true, characterData:true});
 document.documentElement.lang = lang === "mr" ? "mr" : "en";
-setInterval(tick, 20000); document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+setInterval(tick, 20000); document.addEventListener("visibilitychange", () => { if (!document.hidden) { tick(); heartbeat(); } });
+visitorsInit(); setInterval(heartbeat, 60000); heartbeat();
 render();
 if ("serviceWorker" in navigator && !window.Capacitor && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
