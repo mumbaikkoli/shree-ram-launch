@@ -48,6 +48,7 @@ button.sm{padding:8px 12px;min-height:38px;font-size:14px;margin:8px 6px 0 0}but
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:6}
 nav a{flex:1;text-align:center;padding:8px 0 7px;font-size:11px;color:var(--mut);text-decoration:none;min-height:50px}nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:20px;line-height:1.1}
 nav a{position:relative}
+.objcard{text-align:center}.obj{display:flex;align-items:center;justify-content:center;gap:12px;font-size:26px;margin-top:4px}.obj span{font-size:46px;line-height:1}
 .vstats{display:flex;gap:10px;margin-top:16px}.stat{flex:1;text-align:center;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:10px 6px;box-shadow:var(--sh)}
 .stat b{display:block;font-size:22px;line-height:1.2;color:var(--pr)}.stat small{font-size:12px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2e7d32;margin-right:6px;vertical-align:middle;animation:pulse 1.6s infinite}
@@ -97,7 +98,7 @@ nav a{position:relative}
 firebase.initializeApp(window.FIREBASE_CONFIG);
 const auth = firebase.auth(), db = firebase.firestore(), cfg = db.collection("config");
 
-const FUN_INFO = "How to play:\n1. The Take Picture button opens every morning at 7:00 AM.\n2. Only the first 5 clients can take a picture. One picture per client, from the camera only.\n3. At 4:00 PM one picture is picked at random as the Picture of the Day.\n4. All other pictures are then deleted. The Picture of the Day stays until 7:00 AM the next day.\n(All times are Indian Standard Time.)";
+const FUN_INFO = "How to play:\n1. Every morning at 7:00 AM a new Object of the Day appears with its emoji.\n2. The Take Picture button opens at 7:00 AM. Take a picture related to that object, from the camera only.\n3. Only the first 8 clients can take a picture - one picture per client. You will get a Client Number.\n4. At 4:00 PM the app picks one picture that closely matches the object (with a little luck) as the Picture of the Day.\n5. All other pictures are then deleted. The Picture of the Day stays until 7:00 AM the next day.\n(All times are Indian Standard Time.)";
 const F = {
   app_name:["App heading / name","Shree Ram Launch Service"],
   tagline:["Home tagline","Safe & comfortable passenger launch service from Uran (Mora)"],
@@ -130,7 +131,7 @@ const $ = id => document.getElementById(id);
 const MR = {
  "Home":"मुख्यपृष्ठ","Enquiry":"चौकशी","Gallery":"गॅलरी","Messages":"संदेश","Location":"स्थान","Admin":"अ‍ॅडमिन","Settings":"सेटिंग्ज","Services":"सेवा","Account":"खाते",
  "Shree Ram Launch Service":"श्री राम लाँच सर्व्हिस",
- [FUN_INFO]:"कसे खेळायचे:\n१. 'फोटो काढा' बटण रोज सकाळी ७:०० वाजता सुरू होते.\n२. फक्त पहिले ५ ग्राहकच फोटो काढू शकतात. प्रत्येक ग्राहकाला एकच फोटो, फक्त कॅमेऱ्यातून.\n३. दुपारी ४:०० वाजता एक फोटो यादृच्छिकपणे 'दिवसाचे चित्र' म्हणून निवडला जातो.\n४. इतर सर्व फोटो नंतर हटवले जातात. 'दिवसाचे चित्र' दुसऱ्या दिवशी सकाळी ७:०० वाजेपर्यंत दिसते.\n(सर्व वेळा भारतीय प्रमाण वेळेनुसार.)",
+ [FUN_INFO]:"कसे खेळायचे:\n१. रोज सकाळी ७:०० वाजता इमोजीसह नवीन 'आजची वस्तू' दिसते.\n२. 'फोटो काढा' बटण सकाळी ७:०० वाजता सुरू होते. त्या वस्तूशी संबंधित फोटो फक्त कॅमेऱ्यातून काढा.\n३. फक्त पहिले ८ ग्राहकच फोटो काढू शकतात - प्रत्येकी एकच फोटो. तुम्हाला क्लायंट क्रमांक मिळेल.\n४. दुपारी ४:०० वाजता अ‍ॅप वस्तूशी जास्तीत जास्त जुळणारा (थोड्या नशिबासह) एक फोटो 'दिवसाचे चित्र' म्हणून निवडते.\n५. इतर सर्व फोटो नंतर हटवले जातात. 'दिवसाचे चित्र' दुसऱ्या दिवशी सकाळी ७:०० वाजेपर्यंत दिसते.\n(सर्व वेळा भारतीय प्रमाण वेळेनुसार.)",
  "Safe & comfortable passenger launch service from Uran (Mora)":"उरण (मोरा) येथून सुरक्षित व आरामदायी प्रवासी लाँच सेवा",
  "Shree Ram Launch Service runs passenger launches from Mora Jetty, Uran to Mumbai (Colaba) and Khanderi (Kanhoji Angre Island), with life jackets and experienced crew.":"श्री राम लाँच सर्व्हिस मोरा जेटी, उरण येथून मुंबई (कुलाबा) आणि खांदेरी (कान्होजी आंग्रे बेट) येथे प्रवासी लाँच सेवा चालवते. लाइफ जॅकेट आणि अनुभवी कर्मचारी उपलब्ध आहेत.",
  "On Demand Enquiry":"मागणीनुसार सेवेसाठी चौकशी",
@@ -155,14 +156,15 @@ const MR = {
  "Current Visitors":"सध्याचे अभ्यागत","Total Visitors":"एकूण अभ्यागत",
  "Fun":"मजा","Fun Corner":"मजा कोपरा","Fun page title":"मजा पानाचे शीर्षक","Fun page instructions":"मजा पानावरील सूचना",
  "📸 Take Picture":"📸 फोटो काढा","Take Picture opens every morning at 7:00 AM.":"'फोटो काढा' रोज सकाळी ७:०० वाजता सुरू होते.",
- "All 5 pictures are taken for today. Come back tomorrow at 7:00 AM.":"आजचे सर्व ५ फोटो काढले गेले आहेत. उद्या सकाळी ७:०० वाजता परत या.",
+ "All 8 clients have taken their pictures today. Come back tomorrow at 7:00 AM.":"आजच्या ८ ग्राहकांनी फोटो काढले आहेत. उद्या सकाळी ७:०० वाजता परत या.",
  "You have already taken your picture today.":"तुम्ही आज तुमचा फोटो काढला आहे.","Open now - tap the button to take your picture.":"सुरू आहे - फोटो काढण्यासाठी बटण दाबा.",
  "Pictures taken today:":"आज काढलेले फोटो:","Today's Clicks":"आजचे क्लिक्स","No pictures yet today.":"आज अद्याप फोटो नाहीत.","Picture of the Day":"दिवसाचे चित्र","★ Picture of the Day":"★ दिवसाचे चित्र",
  "Selecting the Picture of the Day…":"दिवसाचे चित्र निवडले जात आहे…","The Picture of the Day is not available.":"दिवसाचे चित्र उपलब्ध नाही.","The Picture of the Day stays until 7:00 AM tomorrow.":"'दिवसाचे चित्र' उद्या सकाळी ७:०० वाजेपर्यंत दिसेल.",
  "Capture":"फोटो घ्या","Switch camera":"कॅमेरा बदला","Send":"पाठवा","Retake":"पुन्हा काढा","Opening the camera…":"कॅमेरा उघडत आहे…","Sending…":"पाठवत आहे…",
  "Could not open the camera. Please allow camera access.":"कॅमेरा उघडता आला नाही. कृपया कॅमेऱ्याची परवानगी द्या.","✔ Your picture is in!":"✔ तुमचा फोटो मिळाला!",
  "Could not send the picture. It may be full or closed. Try again later.":"फोटो पाठवता आला नाही. कदाचित जागा संपली असेल किंवा वेळ संपली असेल. नंतर पुन्हा प्रयत्न करा.",
- "Delete this picture?":"हा फोटो हटवायचा?","The admin can delete any picture at any time.":"अ‍ॅडमिन कोणताही फोटो केव्हाही हटवू शकतो.",
+ "Delete this picture?":"हा फोटो हटवायचा?","Object of the Day":"आजची वस्तू","You are Client No":"तुम्ही क्लायंट क्रमांक","Client Number":"क्लायंट क्रमांक",
+ "Deleting a picture does not free its client number.":"फोटो हटवल्यास त्याचा क्लायंट क्रमांक पुन्हा वापरला जात नाही.","Today's Object":"आजची वस्तू","The admin can delete any picture at any time.":"अ‍ॅडमिन कोणताही फोटो केव्हाही हटवू शकतो.",
  "Boat 1":"बोट १","Boat 2":"बोट २","Cell numbers":"मोबाईल नंबर","This phone (automatic GPS)":"हा फोन (आपोआप GPS)","This phone is":"हा फोन आहे",
  "WhatsApp number (country code, no +)":"व्हॉट्सअ‍ॅप नंबर (देश कोडसह, + शिवाय)","Enquiry page title":"चौकशी पानाचे शीर्षक","Enquiry page note":"चौकशी पानावरील सूचना",
  "Gallery page title":"गॅलरी पानाचे शीर्षक","Messages page title":"संदेश पानाचे शीर्षक","Location page title":"स्थान पानाचे शीर्षक",
@@ -445,7 +447,7 @@ async function heartbeat(){
 
 // ---------- FUN: Take Picture (camera only, 5 per day, Picture of the Day) ----------
 // A "fun day" starts at 07:00 IST. Open 07:00-16:00, winner picked from 16:00, everything removed at the next 07:00.
-const FUN_CLOSE = 32400000, FUN_MAX = 5;
+const FUN_CLOSE = 32400000, FUN_MAX = 8;
 const fday = () => Math.floor((Date.now() - 5400000) / 86400000);
 const foff = () => (Date.now() - 5400000) % 86400000;
 const fsrc = p => "data:image/jpeg;base64," + p.data;
@@ -459,11 +461,205 @@ function subFun(){
   funUnsubs.push(db.collection("funDays").doc(String(d)).onSnapshot(x => { fcount = x.exists ? (x.data().count || 0) : 0; dataChanged(); }, () => {}));
   funUnsubs.push(db.collection("funWinner").doc(String(d)).onSnapshot(x => { fwin = x.exists ? x.data() : null; dataChanged(); }, () => {}));
 }
-async function ensureWinner(){            // after 4 PM the first phone that notices picks one picture at random
+// ---- Object of the Day: 7:00 AM every day, the same on every phone (a shuffled cycle, so no repeats until the whole list is used) ----
+const OBJ_TXT = `Mug|☕|मग|
+Cup|🍵|कप|
+Spoon|🥄|चमचा|
+Plate|🍽️|ताट|
+Book|📖|पुस्तक|
+Lamp|💡|दिवा|g:bright
+Clock|🕰️|घड्याळ|
+Key|🔑|चावी|
+Candle|🕯️|मेणबत्ती|g:warm
+Vase|🏺|फुलदाणी|
+Cushion|🛋️|उशी|
+Blanket|🛏️|ब्लँकेट|
+Mirror|🪞|आरसा|g:bright
+Frame|🖼️|फ्रेम|
+Glass|🥛|ग्लास|
+Bowl|🥣|वाटी|
+Window Grille|🪟|खिडकीची जाळी|
+Window Curtain|🪟|खिडकीचा पडदा|
+Window Pane|🪟|खिडकीची काच|g:bright
+Tile|🔳|फरशी|
+Step|🪜|पायरी|
+Door|🚪|दार|
+Handle|🔩|मूठ|
+Roof|🏠|छप्पर|
+Fence|🚧|कुंपण|
+Gate|⛩️|प्रवेशद्वार|
+Branch|🌿|फांदी|g:green
+Leaf|🍃|पान|g:green
+Stone|🪨|दगड|c:grey
+Root|🌱|मूळ|g:brown
+Nest|🪹|घरटे|g:brown
+Flower|🌸|फूल|
+Petal|🌺|पाकळी|c:pink
+Grass|🌾|गवत|c:green
+Fog|🌫️|धुके|g:soft
+Cat|🐱|मांजर|
+Pup|🐶|कुत्र्याचे पिल्लू|
+Kitten|🐈|मांजरीचे पिल्लू|
+Bird Feather|🪶|पक्ष्याचे पीस|
+Cage|🦜|पिंजरा|
+Fishbowl|🐠|मत्स्यपात्र|g:blue
+Color Red|🔴|रंग - लाल|c:red
+Color Blue|🔵|रंग - निळा|c:blue
+Color Green|🟢|रंग - हिरवा|c:green
+Color Yellow|🟡|रंग - पिवळा|c:yellow
+Color Orange|🟠|रंग - केशरी|c:orange
+Color Purple|🟣|रंग - जांभळा|c:purple
+Color Pink|💗|रंग - गुलाबी|c:pink
+Color Brown|🟤|रंग - तपकिरी|c:brown
+Color Grey|🔘|रंग - राखाडी|c:grey
+Color Gold|🥇|रंग - सोनेरी|c:gold
+Color Silver|🥈|रंग - चंदेरी|c:silver
+Color Beige|🏖️|रंग - बेज|c:beige
+Color Peach|🍑|रंग - पीच|c:peach
+Color Teal|🌀|रंग - हिरवट निळा|c:teal
+Color Maroon|🍷|रंग - मरून|c:maroon
+Morning Vibe Sunrise|🌅|सकाळचा अनुभव - सूर्योदय|g:warm
+Morning Vibe Dew|💧|सकाळचा अनुभव - दवबिंदू|g:soft
+Morning Vibe Mist|🌁|सकाळचा अनुभव - धुकं|g:soft
+Morning Vibe Breeze|🌬️|सकाळचा अनुभव - झुळूक|g:soft
+Morning Vibe Sunlight|☀️|सकाळचा अनुभव - सूर्यप्रकाश|g:bright
+Morning Vibe Wake|⏰|सकाळचा अनुभव - जाग|g:bright
+Morning Vibe Toast|🍞|सकाळचा अनुभव - टोस्ट|g:brown
+Morning Vibe Coffee|☕|सकाळचा अनुभव - कॉफी|g:brown
+Morning Vibe Tea|🫖|सकाळचा अनुभव - चहा|g:brown
+Evening Vibe Dusk|🌆|संध्याकाळचा अनुभव - संधिप्रकाश|g:warm
+Evening Vibe Sunset|🌇|संध्याकाळचा अनुभव - सूर्यास्त|g:warm
+Evening Vibe Twilight|🌃|संध्याकाळचा अनुभव - कातरवेळ|g:dark
+Evening Vibe Shade|🌳|संध्याकाळचा अनुभव - छाया|g:dark
+Evening Vibe Shadow|👤|संध्याकाळचा अनुभव - सावली|g:dark
+Evening Vibe Dim|🔅|संध्याकाळचा अनुभव - मंद प्रकाश|g:dark
+Evening Vibe Star|⭐|संध्याकाळचा अनुभव - तारा|g:dark
+Evening Vibe Moon|🌙|संध्याकाळचा अनुभव - चंद्र|g:dark
+Evening Vibe Lantern|🏮|संध्याकाळचा अनुभव - कंदील|g:warm
+Evening Vibe Breeze|🌬️|संध्याकाळचा अनुभव - झुळूक|g:soft
+Flying Birds|🕊️|उडणारे पक्षी|
+Ship in the Sea|🚢|समुद्रातील जहाज|g:blue
+Ferry Launch|⛴️|फेरी लाँच|g:blue
+Barge|🛳️|बार्ज (मालवाहू नौका)|
+Ocean Wave|🌊|समुद्राची लाट|g:blue
+Dock|⚓|धक्का|
+Something Round|⚪|काहीतरी गोल|
+Something Striped|🦓|काहीतरी पट्ट्यांचे|
+Something Shiny|✨|काहीतरी चमकदार|g:bright
+Something like a Triangle|🔺|त्रिकोणासारखे काहीतरी|
+Something Hexagonal|⬢|षटकोनी काहीतरी|
+Something Pentagonal|⬟|पंचकोनी काहीतरी|
+Bag|👜|पिशवी|
+School Book|📚|शालेय पुस्तक|
+Umbrella|☂️|छत्री|
+Shoes|👟|बूट|
+Slippers|🩴|चप्पल|
+Hat|🧢|टोपी|
+Watch|⌚|मनगटी घड्याळ|
+Pen|🖊️|पेन|
+Pencil|✏️|पेन्सिल|
+Notebook|📓|वही|
+Bottle|🍼|बाटली|
+Chair|🪑|खुर्ची|
+Bed|🛏️|पलंग|
+Bucket|🪣|बादली|
+Broom|🧹|झाडू|
+Soap|🧼|साबण|
+Toothbrush|🪥|ब्रश|
+Mobile Phone|📱|मोबाईल फोन|
+Charger|🔋|चार्जर|
+Headphones|🎧|हेडफोन|
+Camera|📷|कॅमेरा|
+Spectacles|👓|चष्मा|
+Sunglasses|🕶️|गॉगल्स|
+Ring|💍|अंगठी|
+Necklace|📿|हार|
+Scissors|✂️|कात्री|
+Thread|🧵|धागा|
+Ball|⚽|चेंडू|
+Toy|🧸|खेळणे|
+Balloon|🎈|फुगा|
+Kite|🪁|पतंग|
+Boat|⛵|होडी|g:blue
+Rope|🪢|दोरी|
+Fishing Net|🥅|मासेमारीचे जाळे|
+Life Jacket|🦺|लाइफ जॅकेट|c:orange
+Fish|🐟|मासा|
+Crab|🦀|खेकडा|c:red
+Shell|🐚|शिंपला|g:soft
+Coconut|🥥|नारळ|g:brown
+Mango|🥭|आंबा|c:yellow
+Banana|🍌|केळे|c:yellow
+Apple|🍎|सफरचंद|c:red
+Lemon|🍋|लिंबू|c:yellow
+Tomato|🍅|टोमॅटो|c:red
+Onion|🧅|कांदा|
+Bread|🥖|पाव|g:brown
+Biscuit|🍪|बिस्कीट|g:brown
+Salt|🧂|मीठ|g:soft
+Tree|🌳|झाड|g:green
+Palm Tree|🌴|नारळाचे झाड|g:green
+Cloud|☁️|ढग|g:soft
+Rain|🌧️|पाऊस|g:soft
+Rainbow|🌈|इंद्रधनुष्य|
+Mountain|⛰️|डोंगर|
+Sand|🏖️|वाळू|c:beige
+Bridge|🌉|पूल|
+Road|🛣️|रस्ता|c:grey
+Bicycle|🚲|सायकल|
+Bus|🚌|बस|
+Auto Rickshaw|🛺|ऑटो रिक्षा|c:yellow
+Train|🚆|रेल्वे|
+Aeroplane|✈️|विमान|g:blue
+Signboard|🪧|फलक|
+Flag|🚩|झेंडा|c:orange
+Lock|🔒|कुलूप|
+Bell|🔔|घंटा|c:gold
+Drum|🥁|ढोल|
+Smile|😊|हसू|g:bright
+Heart Shape|❤️|हृदयाच्या आकाराचे|c:red`;
+const OBJ = OBJ_TXT.split("\n").map(l => { const [en, em, mr, m] = l.split("|"); return {en, em, mr, m}; });
+const seedRand = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+function objectFor(day){
+  const n = OBJ.length, rnd = seedRand(Math.floor(day / n) * 7919 + 17), a = [...Array(n).keys()];
+  for (let i = n - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return OBJ[a[day % n]];
+}
+// ---- picture features (colour and brightness) are measured on the client's phone and used for the 4 PM "closest match" draw ----
+const COLN = ["red","orange","yellow","green","teal","blue","purple","pink","brown","grey","gold","silver","beige","peach","maroon","white","black"];
+const GRP = {warm:["red","orange","yellow","gold","peach","pink","maroon","brown"], green:["green","teal"], blue:["blue","teal"], brown:["brown","beige","maroon"], soft:["grey","silver","white","beige"]};
+function pxColor(R, G, B){
+  const r = R / 255, g2 = G / 255, b = B / 255, mx = Math.max(r, g2, b), mn = Math.min(r, g2, b), d = mx - mn, v = mx, sa = mx ? d / mx : 0; let h = 0;
+  if (d) { h = mx === r ? ((g2 - b) / d) % 6 : mx === g2 ? (b - r) / d + 2 : (r - g2) / d + 4; h *= 60; if (h < 0) h += 360; }
+  if (v < 0.15) return "black";
+  if (sa < 0.12) return v > 0.85 ? "white" : v > 0.6 ? "silver" : "grey";
+  if (sa < 0.4 && v > 0.7 && h >= 20 && h < 55) return h < 35 ? "peach" : "beige";
+  if (h >= 345 || h < 15) return sa > 0.5 && v < 0.55 ? "maroon" : sa < 0.45 && v > 0.8 ? "pink" : "red";
+  if (h < 40) return v < 0.6 ? "brown" : "orange";
+  if (h < 52) return v < 0.85 && sa > 0.5 ? "gold" : "yellow";
+  if (h < 70) return "yellow"; if (h < 160) return "green"; if (h < 195) return "teal"; if (h < 255) return "blue"; if (h < 300) return "purple"; return "pink";
+}
+function imgFeatures(cv){
+  const sm = document.createElement("canvas"); sm.width = sm.height = 24; const x = sm.getContext("2d"); x.drawImage(cv, 0, 0, 24, 24);
+  const d = x.getImageData(0, 0, 24, 24).data, cnt = new Array(COLN.length).fill(0); let br = 0, st = 0;
+  for (let i = 0; i < d.length; i += 4) { const mx = Math.max(d[i], d[i + 1], d[i + 2]) / 255, mn = Math.min(d[i], d[i + 1], d[i + 2]) / 255; br += mx; st += mx ? (mx - mn) / mx : 0; cnt[COLN.indexOf(pxColor(d[i], d[i + 1], d[i + 2]))]++; }
+  const n = d.length / 4; return [...cnt.map(c => Math.round(c / n * 100) / 100), Math.round(br / n * 100) / 100, Math.round(st / n * 100) / 100];
+}
+function matchScore(f, code){
+  if (!code || !Array.isArray(f) || f.length < 19) return null;
+  const [k, v] = code.split(":"), fr = n => f[COLN.indexOf(n)] || 0, br = f[17];
+  if (k === "c") return Math.min(1, fr(v) * 3);
+  if (v === "dark") return Math.max(0, 1 - br * 1.4);
+  if (v === "bright") return Math.min(1, br * 1.2);
+  return Math.min(1, (GRP[v] || []).reduce((a, n) => a + fr(n), 0) * 1.5);
+}
+async function ensureWinner(){            // after 4 PM the first phone that notices picks one picture: random, but closer matches are more likely
   const d = fday(); if (picking || fwin || foff() < FUN_CLOSE || (emptyDay === d && !fpics.length)) return; picking = true;
   try { const ref = db.collection("funWinner").doc(String(d)); if ((await ref.get()).exists) return;
     const q = await db.collection("funPics").where("day", "==", d).get(); if (q.empty) { emptyDay = d; return; }
-    await ref.set({pic:q.docs[Math.floor(Math.random() * q.size)].id, at:Date.now(), day:d}); }
+    const docs = q.docs.map(x => ({id:x.id, f:x.data().f})), ob = objectFor(d), w = docs.map(x => { const sc = matchScore(x.f, ob.m); return sc === null ? 1 : 0.15 + sc; });
+    let r = Math.random() * w.reduce((a, b) => a + b, 0), i = 0; while (i < docs.length - 1 && (r -= w[i]) > 0) i++;
+    await ref.set({pic:docs[i].id, at:Date.now(), day:d}); }
   catch (e) {} finally { picking = false; }
 }
 const delAll = async docs => { for (let i = 0; i < docs.length; i += 400) { const b = db.batch(); docs.slice(i, i + 400).forEach(x => b.delete(x.ref)); await b.commit().catch(() => {}); } };
@@ -475,41 +671,41 @@ async function funCleanup(){               // removes yesterday's pictures and, 
   catch (e) {} finally { cleaning = false; }
 }
 function tick(){ if (!funWanted) return; subFun(); ensureWinner(); funCleanup(); dataChanged(); }
-async function adminDelFun(id){
-  const p = fpics.find(x => x.id === id); if (!p) return; const b = db.batch();
-  b.delete(db.collection("funPics").doc(id));
-  if (!fwin && p.day === fday()) b.set(db.collection("funDays").doc(String(p.day)), {count:firebase.firestore.FieldValue.increment(-1)}, {merge:true});   // frees the slot
-  await b.commit();
-}
+async function adminDelFun(id){ await db.collection("funPics").doc(id).delete(); }
 function funState(){
   const n = Math.max(fcount, fpics.length), mine = fpics.find(p => p.owner === devId());
   if (fwin || foff() >= FUN_CLOSE) return {n, can:false, reason:"Take Picture opens every morning at 7:00 AM."};
   if (mine) return {n, can:false, reason:"You have already taken your picture today."};
-  if (n >= FUN_MAX) return {n, can:false, reason:"All 5 pictures are taken for today. Come back tomorrow at 7:00 AM."};
+  if (n >= FUN_MAX) return {n, can:false, reason:"All 8 clients have taken their pictures today. Come back tomorrow at 7:00 AM."};
   return {n, can:true, reason:"Open now - tap the button to take your picture."};
 }
+const objName = o => lang === "mr" ? o.mr : o.en;
 function fun(){
   subFun(); ensureWinner(); funCleanup();
-  const st = funState(); let lower;
+  const st = funState(), ob = objectFor(fday()), mine = fpics.find(p => p.owner === devId()); let lower;
   if (fwin) { const w = fpics.find(p => p.id === fwin.pic);
-    lower = `<h2>Picture of the Day</h2>` + (w ? `<div class="card potd"><img data-lb alt="" src="${fsrc(w)}"></div><small>The Picture of the Day stays until 7:00 AM tomorrow.</small>` : `<div class="card"><p>The Picture of the Day is not available.</p></div>`); }
+    lower = `<h2>${esc(T("Picture of the Day"))}${w && w.no ? " - " + esc(T("Client Number")) + " #" + dnum(w.no) : ""}</h2>` + (w ? `<div class="card potd"><img data-lb alt="" src="${fsrc(w)}"></div><small>The Picture of the Day stays until 7:00 AM tomorrow.</small>` : `<div class="card"><p>The Picture of the Day is not available.</p></div>`); }
   else lower = `<h2>Today's Clicks</h2>` + (foff() >= FUN_CLOSE && fpics.length ? `<p><small>Selecting the Picture of the Day…</small></p>` : "")
     + (fpics.length ? `<div class="thumbs">${fpics.map(p => `<img data-lb loading="lazy" alt="" src="${fsrc(p)}">`).join("")}</div>` : "<p>No pictures yet today.</p>");
-  return `<h2>${esc(g("fun_title"))}</h2><div class="card"><p>${esc(g("fun_info"))}</p></div>${funNote ? `<p class="ok">${esc(funNote)}</p>` : ""}
-   <button class="full" id="takepic" ${st.can ? "" : "disabled"}>📸 Take Picture</button><p><small>${esc(st.reason)}</small></p>
+  return `<h2>${esc(g("fun_title"))}</h2><div class="card"><p>${esc(g("fun_info"))}</p></div>
+   <div class="card objcard"><small>Object of the Day</small><div class="obj"><span>${ob.em}</span><b>${esc(objName(ob))}</b></div></div>${funNote ? `<p class="ok">${esc(funNote)}</p>` : ""}
+   <button class="full" id="takepic" ${st.can ? "" : "disabled"}>${esc(T("📸 Take Picture"))} – ${ob.em} ${esc(objName(ob))}</button><p><small>${esc(st.reason)}</small></p>
+   ${mine && mine.no ? `<p class="ok"><b>${esc(T("You are Client No"))} #${dnum(mine.no)}</b></p>` : ""}
    <p><small>${esc(T("Pictures taken today:"))} ${dnum(Math.min(st.n, FUN_MAX))}/${dnum(FUN_MAX)}</small></p>${lower}`;
 }
 function initFun(){ const b = $("takepic"); if (b) b.onclick = () => { if (funState().can) openCam(); }; }
 function funAdmin(){
-  subFun(); const n = Math.max(fcount, fpics.length);
-  return `<div class="card"><p><b>${esc(T("Pictures taken today:"))} ${dnum(Math.min(n, FUN_MAX))}/${dnum(FUN_MAX)}</b></p><small>The admin can delete any picture at any time.</small></div>`
-    + (fpics.length ? `<div class="thumbs adm">${fpics.map(p => `<div><img data-lb alt="" src="${fsrc(p)}">${fwin && fwin.pic === p.id ? '<span class="pill">★ Picture of the Day</span>' : ""}<button class="sm del" data-act="delFun" data-id="${p.id}">Delete</button></div>`).join("")}</div>` : "<p>No pictures yet today.</p>");
+  subFun(); const n = Math.max(fcount, fpics.length), ob = objectFor(fday());
+  return `<div class="card objcard"><small>Today's Object</small><div class="obj"><span>${ob.em}</span><b>${esc(objName(ob))}</b></div></div>
+    <div class="card"><p><b>${esc(T("Pictures taken today:"))} ${dnum(Math.min(n, FUN_MAX))}/${dnum(FUN_MAX)}</b></p><small>The admin can delete any picture at any time.</small><br><small>Deleting a picture does not free its client number.</small></div>`
+    + (fpics.length ? `<div class="thumbs adm">${[...fpics].sort((a, b) => (a.no || 0) - (b.no || 0)).map(p => `<div><img data-lb alt="" src="${fsrc(p)}"><span class="pill">#${dnum(p.no || "?")}</span>${fwin && fwin.pic === p.id ? ' <span class="pill">★ Picture of the Day</span>' : ""}<button class="sm del" data-act="delFun" data-id="${p.id}">Delete</button></div>`).join("")}</div>` : "<p>No pictures yet today.</p>");
 }
 // ---- camera (live camera only; nothing can be uploaded from the gallery) ----
+let camFeat = null;
 function camRow(html){ $("camrow").innerHTML = html; }
 async function openCam(){
-  const el = $("cam"); el.style.display = "flex"; camShot = null;
-  el.innerHTML = `<video id="camv" autoplay playsinline muted></video><img id="camp" alt="" style="display:none"><p id="camm" class="ld">Opening the camera…</p><div class="camrow" id="camrow"></div>`;
+  const el = $("cam"), ob = objectFor(fday()); el.style.display = "flex"; camShot = null; camFeat = null;
+  el.innerHTML = `<p class="ld" style="padding:0 0 8px;font-size:20px">${ob.em} ${esc(objName(ob))}</p><video id="camv" autoplay playsinline muted></video><img id="camp" alt="" style="display:none"><p id="camm" class="ld">Opening the camera…</p><div class="camrow" id="camrow"></div>`;
   camLive(); await startCam();
 }
 function camLive(){
@@ -525,28 +721,32 @@ async function startCam(){
 }
 function stopCam(){ if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; } }
 function closeCam(){ stopCam(); $("cam").style.display = "none"; $("cam").innerHTML = ""; }
-function showShot(b64){
-  camShot = b64; stopCam(); const v = $("camv"), im = $("camp"); v.style.display = "none"; im.src = "data:image/jpeg;base64," + b64; im.style.display = "block"; $("camm").textContent = "";
+function showShot(cv){
+  camShot = cv.toDataURL("image/jpeg", .6).split(",")[1]; camFeat = imgFeatures(cv); stopCam();
+  const v = $("camv"), im = $("camp"); v.style.display = "none"; im.src = "data:image/jpeg;base64," + camShot; im.style.display = "block"; $("camm").textContent = "";
   camRow(`<button id="camok">Send</button><button id="camre" class="gold">Retake</button><button id="camx" class="del">Cancel</button>`);
   $("camx").onclick = closeCam; $("camre").onclick = () => { camLive(); startCam(); }; $("camok").onclick = sendShot;
 }
 function shoot(){
   const v = $("camv"); if (!v || !v.videoWidth) return;
   const sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight)), c = document.createElement("canvas"); c.width = Math.round(v.videoWidth * sc); c.height = Math.round(v.videoHeight * sc);
-  c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); showShot(c.toDataURL("image/jpeg", .6).split(",")[1]);
+  c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); showShot(c);
 }
 function fallbackShot(){                  // only for old browsers without a live camera: opens the phone's camera app
   const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "user");
   inp.onchange = () => { const f = inp.files[0]; if (!f) return; const img = new Image(); img.onload = () => { const sc = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement("canvas");
-    c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); showShot(c.toDataURL("image/jpeg", .6).split(",")[1]); }; img.src = URL.createObjectURL(f); };
+    c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); showShot(c); }; img.src = URL.createObjectURL(f); };
   inp.click();
 }
 async function sendShot(){
-  const d = fday(), owner = devId(), id = d + "_" + owner, m = $("camm"); m.textContent = T("Sending…");
-  const b = db.batch(); b.set(db.collection("funPics").doc(id), {day:d, owner, data:camShot, createdAt:Date.now()});
-  b.set(db.collection("funDays").doc(String(d)), {count:firebase.firestore.FieldValue.increment(1), last:id, day:d}, {merge:true});
-  try { await b.commit(); closeCam(); funNote = T("✔ Your picture is in!"); setTimeout(() => { funNote = ""; dataChanged(); }, 8000); dataChanged(); }
-  catch (e) { const mm = $("camm"); if (mm) mm.textContent = T("Could not send the picture. It may be full or closed. Try again later."); }
+  const d = fday(), owner = devId(), id = d + "_" + owner, dayRef = db.collection("funDays").doc(String(d)), picRef = db.collection("funPics").doc(id), m = $("camm"); m.textContent = T("Sending…");
+  try {
+    const no = await db.runTransaction(async t => {            // the next free client number (1 to 8), taken safely even if two phones send at once
+      const sn = await t.get(dayRef), n = (sn.exists ? (sn.data().count || 0) : 0) + 1; if (n > FUN_MAX) throw new Error("full");
+      t.set(picRef, {day:d, owner, data:camShot, createdAt:Date.now(), no:n, f:camFeat});
+      t.set(dayRef, {count:n, last:id, day:d}, {merge:true}); return n; });
+    closeCam(); funNote = "✔ " + T("You are Client No") + " #" + dnum(no); setTimeout(() => { funNote = ""; dataChanged(); }, 12000); dataChanged();
+  } catch (e) { const mm = $("camm"); if (mm) mm.textContent = T("Could not send the picture. It may be full or closed. Try again later."); }
 }
 
 // ---------- MESSAGES (read-only for clients) ----------
